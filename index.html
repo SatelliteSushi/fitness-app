@@ -48,7 +48,7 @@
             --border-radius: 0;
             --border-width: 1px;
             --card-gap: var(--space-md);
-            --header-height: 60px;
+            --header-height: 100px;
             --tab-bar-height: 70px;
             --max-content-width: 600px;
             
@@ -76,6 +76,7 @@
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
         
         /* App Container */
@@ -91,39 +92,113 @@
         .header {
             height: var(--header-height);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0 var(--space-md);
+            padding: var(--space-md);
             border-bottom: 1px solid rgba(0, 217, 255, 0.1);
             background: var(--color-bg-dark);
         }
         
         .app-title {
-            font-size: var(--font-size-lg);
+            font-size: var(--font-size-xl);
             font-weight: var(--font-weight-semibold);
             letter-spacing: 2px;
             background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-cyan) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin-bottom: var(--space-sm);
+        }
+        
+        /* Page Navigation */
+        .page-nav {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+        
+        .page-nav-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--color-card-border);
+            background: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .page-nav-btn:hover:not(:disabled) {
+            border-color: var(--color-accent-cyan);
+            color: var(--color-accent-cyan);
+        }
+        
+        .page-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .page-dots {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .page-dot {
+            width: 6px;
+            height: 6px;
+            border: 1px solid var(--color-card-border);
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .page-dot.active {
+            background: var(--color-accent-cyan);
+            border-color: var(--color-accent-cyan);
+            box-shadow: 0 0 8px var(--color-glow);
         }
         
         /* Main Content */
         .main {
             flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .content-wrapper {
+            height: 100%;
+            overflow-x: hidden;
             overflow-y: auto;
-            padding: var(--space-lg) var(--space-md);
-            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg));
+            -webkit-overflow-scrolling: touch;
         }
         
         .content {
             max-width: var(--max-content-width);
             margin: 0 auto;
+            padding: var(--space-lg) var(--space-md);
+            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg));
+        }
+        
+        /* Page Slider */
+        .page-slider {
+            display: flex;
+            transition: transform 0.3s ease;
+            touch-action: pan-y;
+        }
+        
+        .page {
+            min-width: 100%;
+            flex-shrink: 0;
         }
         
         /* Tab View */
         .tab-content {
             display: none;
+            height: 100%;
         }
         
         .tab-content.active {
@@ -273,6 +348,9 @@
             width: 28px;
             height: 28px;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .tab.active .tab-icon::before {
@@ -307,17 +385,25 @@
             z-index: -1;
         }
         
-        .tab-icon svg {
+        .tab-icon svg, .tab-icon img {
             width: 100%;
             height: 100%;
             stroke: var(--color-text-secondary);
-            transition: stroke 0.2s ease;
+            transition: stroke 0.2s ease, filter 0.2s ease;
             position: relative;
             z-index: 1;
         }
         
+        .tab-icon img {
+            object-fit: contain;
+        }
+        
         .tab.active .tab-icon svg {
             stroke: var(--color-accent-cyan);
+        }
+        
+        .tab.active .tab-icon img {
+            filter: brightness(0) saturate(100%) invert(67%) sepia(89%) saturate(2899%) hue-rotate(161deg) brightness(103%) contrast(101%);
         }
         
         .tab-label {
@@ -352,13 +438,14 @@
         
         .options-content {
             width: 100%;
-            max-height: 50vh;
+            max-height: 70vh;
             background: var(--color-bg-navy);
             border: 1px solid var(--color-card-border);
             border-radius: var(--border-radius);
             padding: var(--space-lg);
             animation: slideUp 0.3s ease;
             position: relative;
+            overflow-y: auto;
         }
         
         .options-content::before {
@@ -439,8 +526,81 @@
         
         .options-body {
             color: var(--color-text-secondary);
-            text-align: center;
-            padding: var(--space-xl) 0;
+        }
+        
+        .options-section {
+            margin-bottom: var(--space-xl);
+        }
+        
+        .options-section-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-md);
+        }
+        
+        .icon-upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+        }
+        
+        .icon-upload-item {
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-md);
+            background: var(--color-card-bg);
+        }
+        
+        .icon-upload-item label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .icon-preview {
+            width: 40px;
+            height: 40px;
+            margin: var(--space-sm) 0;
+            border: 1px solid var(--color-card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-dark);
+        }
+        
+        .icon-preview svg, .icon-preview img {
+            width: 24px;
+            height: 24px;
+            stroke: var(--color-text-secondary);
+        }
+        
+        .icon-preview img {
+            object-fit: contain;
+        }
+        
+        .icon-upload-item input[type="file"] {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-xs);
+        }
+        
+        .icon-upload-item button {
+            width: 100%;
+            padding: var(--space-xs);
+            background: none;
+            border: 1px solid var(--color-card-border);
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-xs);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-upload-item button:hover {
+            border-color: var(--color-accent-cyan);
+            color: var(--color-accent-cyan);
         }
         
         /* Build Version */
@@ -484,117 +644,195 @@
                 margin: 0 auto;
                 border-radius: var(--border-radius);
             }
+            
+            .icon-upload-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
     </style>
 </head>
 <body>
     <div class="app">
         <header class="header">
-            <h1 class="app-title">FITNESS</h1>
+            <h1 class="app-title" id="appTitle">MEAL PLAN</h1>
+            <div class="page-nav">
+                <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()">←</button>
+                <span id="pageName">Today's Meals</span>
+                <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()">→</button>
+            </div>
+            <div class="page-dots" id="pageDots"></div>
         </header>
         
         <main class="main">
-            <div class="content">
-                <!-- Diet Tab -->
-                <div id="diet" class="tab-content active">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Daily Nutrition</h2>
-                            <span class="card-badge">Sample</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Track macros and calories throughout your day</p>
-                            <div class="card-metric">
-                                <span class="metric-label">Calories</span>
-                                <span class="metric-value">2,180</span>
+            <!-- Meal Plan Tab -->
+            <div id="meal-plan" class="tab-content active">
+                <div class="content-wrapper">
+                    <div class="page-slider" id="mealPlanSlider">
+                        <!-- Page 1: Today's Meals -->
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Breakfast</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Start your day with balanced nutrition</p>
+                                        <div class="card-metric">
+                                            <span class="metric-label">Calories</span>
+                                            <span class="metric-value">450</span>
+                                        </div>
+                                        <div class="card-metric">
+                                            <span class="metric-label">Protein</span>
+                                            <span class="metric-value">25g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Lunch</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Midday fuel for sustained energy</p>
+                                        <div class="card-metric">
+                                            <span class="metric-label">Calories</span>
+                                            <span class="metric-value">680</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-metric">
-                                <span class="metric-label">Protein</span>
-                                <span class="metric-value">145g</span>
-                            </div>
-                            <div class="card-metric">
-                                <span class="metric-label">Water</span>
-                                <span class="metric-value">2.4L</span>
+                        </div>
+                        
+                        <!-- Page 2: Meal Builder -->
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Create Meal</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Build custom meals to fit your macros</p>
+                                        <div class="card-metric">
+                                            <span class="metric-label">Recipes</span>
+                                            <span class="metric-value">120+</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Meal Log</h2>
-                            <span class="card-badge">Sample</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Record meals and analyze nutrition patterns</p>
-                            <div class="card-metric">
-                                <span class="metric-label">Today</span>
-                                <span class="metric-value">3 Meals</span>
+                        
+                        <!-- Page 3: My Meals -->
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Saved Meals</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Your favorite meal combinations</p>
+                                        <div class="card-metric">
+                                            <span class="metric-label">Saved</span>
+                                            <span class="metric-value">12</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Workouts Tab -->
-                <div id="workouts" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Training</h2>
-                            <span class="card-badge">Sample</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Track your workouts and progress</p>
-                            <div class="card-metric">
-                                <span class="metric-label">This Week</span>
-                                <span class="metric-value">4 Sessions</span>
+            </div>
+            
+            <!-- Workouts Tab -->
+            <div id="workouts" class="tab-content">
+                <div class="content-wrapper">
+                    <div class="page-slider" id="workoutsSlider">
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 1</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Workouts content placeholder</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-metric">
-                                <span class="metric-label">Duration</span>
-                                <span class="metric-value">3h 45m</span>
+                        </div>
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 2</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Workouts content placeholder</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Progress</h2>
-                            <span class="card-badge">Sample</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Monitor your strength and endurance gains</p>
-                            <div class="card-metric">
-                                <span class="metric-label">Streak</span>
-                                <span class="metric-value">12 Days</span>
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 3</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Workouts content placeholder</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Schedule Tab -->
-                <div id="schedule" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">This Week</h2>
-                            <span class="card-badge">Sample</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Plan your workouts and meals in advance</p>
-                            <div class="card-metric">
-                                <span class="metric-label">Workouts Planned</span>
-                                <span class="metric-value">5</span>
+            </div>
+            
+            <!-- Schedule Tab -->
+            <div id="schedule" class="tab-content">
+                <div class="content-wrapper">
+                    <div class="page-slider" id="scheduleSlider">
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 1</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Schedule content placeholder</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Upcoming</h2>
-                            <span class="card-badge">Sample</span>
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 2</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Schedule content placeholder</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-content">
-                            <p>Stay on track with your fitness schedule</p>
-                            <div class="card-metric">
-                                <span class="metric-label">Next Session</span>
-                                <span class="metric-value">Tomorrow</span>
+                        <div class="page">
+                            <div class="content">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h2 class="card-title">Page 3</h2>
+                                        <span class="card-badge">Sample</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <p>Schedule content placeholder</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -604,17 +842,17 @@
         
         <!-- Tab Bar -->
         <nav class="tab-bar">
-            <a href="#diet" class="tab" data-tab="diet">
-                <div class="tab-icon">
+            <a href="#meal-plan" class="tab" data-tab="meal-plan" data-title="MEAL PLAN">
+                <div class="tab-icon" id="mealPlanIcon">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path>
                         <line x1="3" y1="2" x2="9" y2="2"></line>
                     </svg>
                 </div>
-                <span class="tab-label">Diet</span>
+                <span class="tab-label">Meal Plan</span>
             </a>
-            <a href="#workouts" class="tab" data-tab="workouts">
-                <div class="tab-icon">
+            <a href="#workouts" class="tab" data-tab="workouts" data-title="WORKOUTS">
+                <div class="tab-icon" id="workoutsIcon">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6.5 6.5l11 11"></path>
                         <path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path>
@@ -624,8 +862,8 @@
                 </div>
                 <span class="tab-label">Workouts</span>
             </a>
-            <a href="#schedule" class="tab" data-tab="schedule">
-                <div class="tab-icon">
+            <a href="#schedule" class="tab" data-tab="schedule" data-title="SCHEDULE">
+                <div class="tab-icon" id="scheduleIcon">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -638,8 +876,8 @@
                 </div>
                 <span class="tab-label">Schedule</span>
             </a>
-            <a href="javascript:void(0)" class="tab" data-tab="settings" onclick="toggleOptions()">
-                <div class="tab-icon">
+            <a href="javascript:void(0)" class="tab" data-tab="settings" data-title="SETTINGS" onclick="toggleOptions()">
+                <div class="tab-icon" id="settingsIcon">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
@@ -653,7 +891,7 @@
         <div class="options-panel" id="optionsPanel" onclick="closeOptionsOnBackdrop(event)">
             <div class="options-content" onclick="event.stopPropagation()">
                 <div class="options-header">
-                    <h2 class="options-title">Options</h2>
+                    <h2 class="options-title">Settings</h2>
                     <button class="close-btn" onclick="toggleOptions()">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -662,7 +900,65 @@
                     </button>
                 </div>
                 <div class="options-body">
-                    <p>Options coming soon</p>
+                    <div class="options-section">
+                        <h3 class="options-section-title">Custom Tab Icons</h3>
+                        <div class="icon-upload-grid">
+                            <div class="icon-upload-item">
+                                <label>Meal Plan</label>
+                                <div class="icon-preview" id="mealPlanPreview">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path>
+                                        <line x1="3" y1="2" x2="9" y2="2"></line>
+                                    </svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('meal-plan', this)" />
+                                <button onclick="resetIcon('meal-plan')">Reset</button>
+                            </div>
+                            
+                            <div class="icon-upload-item">
+                                <label>Workouts</label>
+                                <div class="icon-preview" id="workoutsPreview">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6.5 6.5l11 11"></path>
+                                        <path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path>
+                                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                        <circle cx="18.5" cy="5.5" r="2.5"></circle>
+                                    </svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('workouts', this)" />
+                                <button onclick="resetIcon('workouts')">Reset</button>
+                            </div>
+                            
+                            <div class="icon-upload-item">
+                                <label>Schedule</label>
+                                <div class="icon-preview" id="schedulePreview">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        <circle cx="8" cy="15" r="1"></circle>
+                                        <circle cx="12" cy="15" r="1"></circle>
+                                        <circle cx="16" cy="15" r="1"></circle>
+                                    </svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('schedule', this)" />
+                                <button onclick="resetIcon('schedule')">Reset</button>
+                            </div>
+                            
+                            <div class="icon-upload-item">
+                                <label>Settings</label>
+                                <div class="icon-preview" id="settingsPreview">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
+                                    </svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('settings', this)" />
+                                <button onclick="resetIcon('settings')">Reset</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="build-info">
                     <div class="build-info-label">Build</div>
@@ -677,10 +973,37 @@
         const buildTime = 'BUILD_TIMESTAMP';
         document.getElementById('buildInfo').textContent = buildTime;
         
+        // Tab and Page Configuration
+        const tabConfig = {
+            'meal-plan': {
+                title: 'MEAL PLAN',
+                pages: ["Today's Meals", "Meal Builder", "My Meals"]
+            },
+            'workouts': {
+                title: 'WORKOUTS',
+                pages: ['Page 1', 'Page 2', 'Page 3']
+            },
+            'schedule': {
+                title: 'SCHEDULE',
+                pages: ['Page 1', 'Page 2', 'Page 3']
+            },
+            'settings': {
+                title: 'SETTINGS',
+                pages: []
+            }
+        };
+        
+        let currentTab = 'meal-plan';
+        let currentPage = 0;
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
         // Tab routing
         function switchTab(tabName) {
-            // Don't switch if it's the settings tab
             if (tabName === 'settings') return;
+            
+            currentTab = tabName;
+            currentPage = 0;
             
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
@@ -693,16 +1016,115 @@
                 tab.classList.remove('active');
             });
             document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
+            
+            // Update header
+            const config = tabConfig[tabName];
+            document.getElementById('appTitle').textContent = config.title;
+            
+            // Update page navigation
+            updatePageNavigation();
         }
         
-        // Handle hash changes
+        function updatePageNavigation() {
+            const config = tabConfig[currentTab];
+            const pageCount = config.pages.length;
+            
+            // Update page name
+            document.getElementById('pageName').textContent = config.pages[currentPage] || '';
+            
+            // Update buttons
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage === pageCount - 1;
+            
+            // Update dots
+            const dotsContainer = document.getElementById('pageDots');
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < pageCount; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'page-dot' + (i === currentPage ? ' active' : '');
+                dotsContainer.appendChild(dot);
+            }
+            
+            // Update slider position
+            const slider = document.querySelector(`#${currentTab} .page-slider`);
+            if (slider) {
+                slider.style.transform = `translateX(-${currentPage * 100}%)`;
+            }
+        }
+        
+        function nextPage() {
+            const config = tabConfig[currentTab];
+            if (currentPage < config.pages.length - 1) {
+                currentPage++;
+                updatePageNavigation();
+            }
+        }
+        
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePageNavigation();
+            }
+        }
+        
+        // Touch/Swipe handling
+        function setupSwipeHandling() {
+            document.querySelectorAll('.tab-content').forEach(tabContent => {
+                const slider = tabContent.querySelector('.page-slider');
+                if (!slider) return;
+                
+                slider.addEventListener('touchstart', e => {
+                    touchStartX = e.touches[0].clientX;
+                }, { passive: true });
+                
+                slider.addEventListener('touchmove', e => {
+                    touchEndX = e.touches[0].clientX;
+                }, { passive: true });
+                
+                slider.addEventListener('touchend', () => {
+                    handleSwipe();
+                });
+            });
+        }
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left - next page
+                    nextPage();
+                } else {
+                    // Swipe right - previous page
+                    previousPage();
+                }
+            }
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') {
+                previousPage();
+            } else if (e.key === 'ArrowRight') {
+                nextPage();
+            }
+        });
+        
+        // Hash routing
         function handleHashChange() {
-            const hash = window.location.hash.slice(1) || 'diet';
+            const hash = window.location.hash.slice(1) || 'meal-plan';
             switchTab(hash);
         }
         
         window.addEventListener('hashchange', handleHashChange);
-        window.addEventListener('load', handleHashChange);
+        window.addEventListener('load', () => {
+            handleHashChange();
+            setupSwipeHandling();
+            loadCustomIcons();
+        });
         
         // Options panel
         function toggleOptions() {
@@ -710,12 +1132,14 @@
             const isOpening = !panel.classList.contains('active');
             panel.classList.toggle('active');
             
-            // Highlight settings tab when panel is open
             const settingsTab = document.querySelector('.tab[data-tab="settings"]');
             if (isOpening) {
                 settingsTab?.classList.add('active');
+                document.getElementById('appTitle').textContent = 'SETTINGS';
             } else {
                 settingsTab?.classList.remove('active');
+                const config = tabConfig[currentTab];
+                document.getElementById('appTitle').textContent = config.title;
             }
         }
         
@@ -725,6 +1149,56 @@
             }
         }
         
+        // Custom Icon Management
+        function uploadIcon(tabName, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                localStorage.setItem(`icon-${tabName}`, dataUrl);
+                updateIcon(tabName, dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function resetIcon(tabName) {
+            localStorage.removeItem(`icon-${tabName}`);
+            updateIcon(tabName, null);
+        }
+        
+        function updateIcon(tabName, dataUrl) {
+            const iconContainer = document.getElementById(`${tabName === 'meal-plan' ? 'mealPlan' : tabName}Icon`);
+            const preview = document.getElementById(`${tabName === 'meal-plan' ? 'mealPlan' : tabName}Preview`);
+            
+            if (dataUrl) {
+                // Update tab bar icon
+                iconContainer.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
+                // Update preview
+                preview.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
+            } else {
+                // Restore default SVG
+                const svgMap = {
+                    'meal-plan': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path><line x1="3" y1="2" x2="9" y2="2"></line></svg>',
+                    'workouts': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"></path><path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="5.5" r="2.5"></circle></svg>',
+                    'schedule': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
+                    'settings': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path></svg>'
+                };
+                iconContainer.innerHTML = svgMap[tabName];
+                preview.innerHTML = svgMap[tabName];
+            }
+        }
+        
+        function loadCustomIcons() {
+            ['meal-plan', 'workouts', 'schedule', 'settings'].forEach(tabName => {
+                const dataUrl = localStorage.getItem(`icon-${tabName}`);
+                if (dataUrl) {
+                    updateIcon(tabName, dataUrl);
+                }
+            });
+        }
+        
         // Register service worker with auto-update
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -732,17 +1206,14 @@
                     .then(registration => {
                         console.log('ServiceWorker registered:', registration);
                         
-                        // Check for updates on page load
                         registration.update();
                         
-                        // Check for updates when page becomes visible
                         document.addEventListener('visibilitychange', () => {
                             if (!document.hidden) {
                                 registration.update();
                             }
                         });
                         
-                        // Reload when new service worker activates
                         registration.addEventListener('updatefound', () => {
                             const newWorker = registration.installing;
                             newWorker.addEventListener('statechange', () => {
