@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Fitness">
     <title>Fitness</title>
     
@@ -81,7 +81,7 @@
             padding-top: env(safe-area-inset-top);
         }
         
-        /* Header - Sticky, solid dark */
+        /* Header - Solid, no blur */
         .header {
             position: sticky;
             top: 0;
@@ -90,9 +90,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: var(--space-sm) var(--space-md);
-            gap: var(--space-xs);
+            justify-content: space-around;
+            padding: 0 var(--space-md);
             background: var(--color-bg-dark);
             border-bottom: 1px solid rgba(0, 217, 255, 0.1);
         }
@@ -105,46 +104,42 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            padding-bottom: var(--space-xs);
             position: relative;
         }
         
         .app-title::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
             height: 1px;
             background: rgba(0, 217, 255, 0.1);
         }
         
-        /* Page Navigation */
+        /* Page Navigation - centered inline-flex row */
         .page-nav {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 0;
+            gap: 4px;
             font-size: var(--font-size-sm);
             color: var(--color-text-secondary);
-            position: relative;
-            min-width: 180px;
-            justify-content: center;
         }
         
         .page-name-container {
             position: relative;
             height: 20px;
             overflow: hidden;
-            min-width: 120px;
-            text-align: center;
+            white-space: nowrap;
         }
         
         .page-name {
             position: absolute;
-            left: 50%;
+            left: 0;
             top: 0;
-            transform: translateX(-50%);
             white-space: nowrap;
+            transition: opacity 0.3s ease, transform 0.3s ease;
             opacity: 1;
         }
         
@@ -158,13 +153,12 @@
             color: var(--color-text-secondary);
             cursor: pointer;
             padding: 0;
-            height: 24px;
-            display: flex;
+            height: 20px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0;
             transition: color 0.2s ease;
-            will-change: transform;
-            position: relative;
         }
         
         .page-nav-btn:hover:not(:disabled) {
@@ -244,51 +238,10 @@
             border-radius: var(--border-radius);
             padding: var(--space-lg);
             margin-bottom: var(--card-gap);
-            backdrop-filter: blur(10px);
             position: relative;
             transition: all 0.3s ease;
         }
         
-        .card::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: var(--border-radius);
-            padding: 1px;
-            background: radial-gradient(circle at center, var(--color-glow) 0%, transparent 70%);
-            mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-composite: source-in;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.6;
-            transition: opacity 0.3s ease;
-        }
-        
-        .card:hover::before {
-            opacity: 1;
-            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.3) 0%, transparent 70%);
-        }
         
         .card:hover {
             border-color: var(--color-accent-cyan);
@@ -480,7 +433,6 @@
             width: 25%;
             height: 2px;
             background: var(--color-accent-cyan);
-            box-shadow: 0 0 8px var(--color-glow);
             transition: transform 0.3s ease;
             will-change: transform;
         }
@@ -510,38 +462,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .tab.active .tab-icon::before {
-            content: '';
-            position: absolute;
-            inset: -8px;
-            background: radial-gradient(circle at center, var(--color-glow) 0%, transparent 70%);
-            mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-composite: source-in;
-            pointer-events: none;
-            z-index: -1;
         }
         
         .tab-icon svg, .tab-icon img {
@@ -907,12 +827,18 @@
             
             updatePageNavigation();
             
-            // Reset carousel scroll position
+            // Reset carousel scroll position - use double rAF to ensure layout is complete
             requestAnimationFrame(() => {
-                const carousel = document.querySelector(`#${tabName} .page-carousel`);
-                if (carousel) {
-                    carousel.scrollLeft = 0;
-                }
+                requestAnimationFrame(() => {
+                    const carousel = document.querySelector(`#${tabName} .page-carousel`);
+                    if (carousel) {
+                        // Force layout recalc
+                        carousel.offsetWidth;
+                        carousel.scrollLeft = 0;
+                        // Ensure page navigation reflects current state
+                        updateChevrons(0, config.pages.length);
+                    }
+                });
             });
             
             history.replaceState(null, '', '#' + tabName);
@@ -927,36 +853,45 @@
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             
-            const maxChevrons = totalPages - 1;
             const leftActiveCount = currentPageNum;
             const rightActiveCount = totalPages - 1 - currentPageNum;
             
-            // Update left chevrons
+            // Update left chevrons - show only active, or one greyed if 0
             prevBtn.innerHTML = '';
-            for (let i = 0; i < maxChevrons; i++) {
+            if (leftActiveCount === 0) {
                 const chevron = document.createElement('div');
                 chevron.className = 'chevron';
-                const isActive = i < leftActiveCount;
-                chevron.style.opacity = isActive ? '1' : '0.2';
+                chevron.style.opacity = '0.2';
+                chevron.style.color = 'var(--color-text-secondary)';
                 chevron.innerHTML = createChevronSVG('left');
-                if (!isActive) {
-                    chevron.style.color = 'var(--color-text-secondary)';
-                }
                 prevBtn.appendChild(chevron);
+            } else {
+                for (let i = 0; i < leftActiveCount; i++) {
+                    const chevron = document.createElement('div');
+                    chevron.className = 'chevron';
+                    chevron.style.opacity = '1';
+                    chevron.innerHTML = createChevronSVG('left');
+                    prevBtn.appendChild(chevron);
+                }
             }
             
-            // Update right chevrons
+            // Update right chevrons - show only active, or one greyed if 0
             nextBtn.innerHTML = '';
-            for (let i = 0; i < maxChevrons; i++) {
+            if (rightActiveCount === 0) {
                 const chevron = document.createElement('div');
                 chevron.className = 'chevron';
-                const isActive = i < rightActiveCount;
-                chevron.style.opacity = isActive ? '1' : '0.2';
+                chevron.style.opacity = '0.2';
+                chevron.style.color = 'var(--color-text-secondary)';
                 chevron.innerHTML = createChevronSVG('right');
-                if (!isActive) {
-                    chevron.style.color = 'var(--color-text-secondary)';
-                }
                 nextBtn.appendChild(chevron);
+            } else {
+                for (let i = 0; i < rightActiveCount; i++) {
+                    const chevron = document.createElement('div');
+                    chevron.className = 'chevron';
+                    chevron.style.opacity = '1';
+                    chevron.innerHTML = createChevronSVG('right');
+                    nextBtn.appendChild(chevron);
+                }
             }
         }
         
@@ -969,7 +904,7 @@
                 return;
             }
             
-            pageNav.style.display = 'flex';
+            pageNav.style.display = 'inline-flex';
             
             // Create page name elements - visible by default
             const container = document.getElementById('pageNameContainer');
@@ -989,15 +924,18 @@
                 pageNameElements[index] = el;
             });
             
-            // Immediate measure (synchronous)
+            // Measure widths synchronously (for container sizing only)
             config.pages.forEach((pageName, index) => {
                 const el = pageNameElements[index];
                 pageNameWidths[index] = el.offsetWidth || 120;
             });
             
+            // Set container width to widest page name
+            const maxWidth = Math.max(...Object.values(pageNameWidths));
+            container.style.width = `${maxWidth}px`;
+            
             // Update immediately
             updateChevrons(currentPage, config.pages.length);
-            updateArrowPositions(pageNameWidths[currentPage] || 120);
             
             // Re-measure after fonts if needed
             if (document.fonts && document.fonts.ready) {
@@ -1006,22 +944,10 @@
                         const el = pageNameElements[index];
                         if (el) pageNameWidths[index] = el.offsetWidth || 120;
                     });
-                    updateArrowPositions(pageNameWidths[currentPage] || 120);
+                    const newMaxWidth = Math.max(...Object.values(pageNameWidths));
+                    container.style.width = `${newMaxWidth}px`;
                 });
             }
-        }
-        
-        function updateArrowPositions(width) {
-            const halfWidth = width / 2;
-            const gap = 5; // 4-6px gap
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            
-            const prevWidth = prevBtn.offsetWidth || 12;
-            const nextWidth = nextBtn.offsetWidth || 12;
-            
-            prevBtn.style.transform = `translateX(${-halfWidth - gap - prevWidth}px)`;
-            nextBtn.style.transform = `translateX(${halfWidth + gap}px)`;
         }
         
         function animatePageTransition(progress, fromPage, toPage) {
@@ -1031,11 +957,11 @@
             
             const fromEl = pageNameElements[fromPage];
             fromEl.style.opacity = (1 - progress).toString();
-            fromEl.style.transform = `translateX(${-50 + (toPage > fromPage ? -100 : 100) * progress}%)`;
+            fromEl.style.transform = `translateX(${(toPage > fromPage ? -100 : 100) * progress}%)`;
             
             const toEl = pageNameElements[toPage];
             toEl.style.opacity = progress.toString();
-            toEl.style.transform = `translateX(${(toPage > fromPage ? 50 : -150) + (toPage > fromPage ? -100 : 100) * progress}%)`;
+            toEl.style.transform = `translateX(${(toPage > fromPage ? 100 : -100) * (1 - progress)}%)`;
             
             Object.keys(pageNameElements).forEach(key => {
                 const index = parseInt(key);
@@ -1043,11 +969,6 @@
                     pageNameElements[index].style.opacity = '0';
                 }
             });
-            
-            const fromWidth = pageNameWidths[fromPage] || 120;
-            const toWidth = pageNameWidths[toPage] || 120;
-            const interpolatedWidth = fromWidth + (toWidth - fromWidth) * progress;
-            updateArrowPositions(interpolatedWidth);
             
             const totalPages = tabConfig[currentTab].pages.length;
             animateChevrons(progress, fromPage, toPage, totalPages);
@@ -1187,12 +1108,14 @@
         window.addEventListener('resize', () => {
             if (tabConfig[currentTab].pages.length > 0) {
                 requestAnimationFrame(() => {
+                    const container = document.getElementById('pageNameContainer');
                     Object.keys(pageNameElements).forEach(key => {
                         const index = parseInt(key);
                         const el = pageNameElements[index];
                         pageNameWidths[index] = el.offsetWidth || 120;
                     });
-                    updateArrowPositions(pageNameWidths[currentPage] || 120);
+                    const maxWidth = Math.max(...Object.values(pageNameWidths));
+                    container.style.width = `${maxWidth}px`;
                 });
             }
         });
