@@ -15,7 +15,6 @@
     <style>
         /* Design Tokens */
         :root {
-            /* Colors */
             --color-bg-dark: #0a0e1a;
             --color-bg-navy: #121b2d;
             --color-accent-cyan: #00d9ff;
@@ -26,37 +25,31 @@
             --color-card-bg: rgba(18, 27, 45, 0.6);
             --color-glow: rgba(0, 217, 255, 0.15);
             
-            /* Spacing */
             --space-xs: 8px;
             --space-sm: 12px;
             --space-md: 16px;
             --space-lg: 24px;
             --space-xl: 32px;
             
-            /* Typography */
             --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
             --font-size-xs: 11px;
             --font-size-sm: 13px;
             --font-size-base: 15px;
             --font-size-lg: 20px;
-            --font-size-xl: 28px;
+            --font-size-xl: 24px;
             --font-weight-normal: 400;
             --font-weight-medium: 500;
             --font-weight-semibold: 600;
             
-            /* Layout */
             --border-radius: 0;
             --border-width: 1px;
             --card-gap: var(--space-md);
-            --header-height: 100px;
-            --tab-bar-height: 70px;
+            --header-height: 70px;
+            --tab-bar-height: 60px;
             --max-content-width: 600px;
-            
-            /* Matrix texture for glows */
             --matrix-cell-size: 3px;
         }
         
-        /* Reset & Base */
         * {
             margin: 0;
             padding: 0;
@@ -65,6 +58,7 @@
         
         html {
             background: var(--color-bg-dark);
+            overscroll-behavior: none;
         }
         
         body {
@@ -77,9 +71,9 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             overflow-x: hidden;
+            overscroll-behavior: none;
         }
         
-        /* App Container */
         .app {
             display: flex;
             flex-direction: column;
@@ -88,27 +82,32 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
         
-        /* Header */
+        /* Header - Sticky, slim, semi-transparent */
         .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
             height: var(--header-height);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: var(--space-md);
+            padding: var(--space-sm) var(--space-md);
+            gap: var(--space-xs);
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(0, 217, 255, 0.1);
-            background: var(--color-bg-dark);
         }
         
         .app-title {
-            font-size: var(--font-size-xl);
+            font-size: var(--font-size-lg);
             font-weight: var(--font-weight-semibold);
             letter-spacing: 2px;
             background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-cyan) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: var(--space-sm);
         }
         
         /* Page Navigation */
@@ -121,20 +120,21 @@
         }
         
         .page-nav-btn {
-            width: 24px;
-            height: 24px;
-            border: 1px solid var(--color-card-border);
             background: none;
+            border: none;
             color: var(--color-text-secondary);
             cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: color 0.2s ease;
         }
         
         .page-nav-btn:hover:not(:disabled) {
-            border-color: var(--color-accent-cyan);
             color: var(--color-accent-cyan);
         }
         
@@ -146,6 +146,7 @@
         .page-dots {
             display: flex;
             gap: 6px;
+            margin-left: var(--space-xs);
         }
         
         .page-dot {
@@ -166,12 +167,38 @@
         .main {
             flex: 1;
             overflow: hidden;
-            position: relative;
         }
         
-        .content-wrapper {
+        /* Tab Content */
+        .tab-content {
+            display: none;
             height: 100%;
-            overflow-x: hidden;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Page Carousel with CSS Scroll Snap */
+        .page-carousel {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            height: 100%;
+        }
+        
+        .page-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .page {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -180,29 +207,7 @@
             max-width: var(--max-content-width);
             margin: 0 auto;
             padding: var(--space-lg) var(--space-md);
-            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg));
-        }
-        
-        /* Page Slider */
-        .page-slider {
-            display: flex;
-            transition: transform 0.3s ease;
-            touch-action: pan-y;
-        }
-        
-        .page {
-            min-width: 100%;
-            flex-shrink: 0;
-        }
-        
-        /* Tab View */
-        .tab-content {
-            display: none;
-            height: 100%;
-        }
-        
-        .tab-content.active {
-            display: block;
+            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg) + env(safe-area-inset-bottom));
         }
         
         /* Card Component */
@@ -217,7 +222,6 @@
             transition: all 0.3s ease;
         }
         
-        /* Matrix glow effect */
         .card::before {
             content: '';
             position: absolute;
@@ -236,7 +240,6 @@
                     transparent calc(var(--matrix-cell-size) - 1px),
                     black calc(var(--matrix-cell-size) - 1px),
                     black var(--matrix-cell-size));
-            mask-composite: intersect;
             -webkit-mask-image: 
                 repeating-linear-gradient(0deg, 
                     transparent 0px, 
@@ -315,7 +318,117 @@
             color: var(--color-accent-cyan);
         }
         
-        /* Tab Bar */
+        /* Settings Content */
+        .settings-content {
+            overflow-y: auto;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        .settings-section {
+            max-width: var(--max-content-width);
+            margin: 0 auto;
+            padding: var(--space-lg) var(--space-md);
+            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg) + env(safe-area-inset-bottom));
+        }
+        
+        .settings-section-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-md);
+        }
+        
+        .icon-upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+        
+        .icon-upload-item {
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-md);
+            background: var(--color-card-bg);
+            overflow: hidden;
+        }
+        
+        .icon-upload-item label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .icon-preview {
+            width: 40px;
+            height: 40px;
+            margin: var(--space-sm) 0;
+            border: 1px solid var(--color-card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-dark);
+        }
+        
+        .icon-preview svg, .icon-preview img {
+            width: 24px;
+            height: 24px;
+            stroke: var(--color-text-secondary);
+        }
+        
+        .icon-preview img {
+            object-fit: contain;
+        }
+        
+        .icon-upload-item input[type="file"] {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-xs);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .icon-upload-item button {
+            width: 100%;
+            padding: var(--space-xs);
+            background: none;
+            border: 1px solid var(--color-card-border);
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-xs);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-upload-item button:hover {
+            border-color: var(--color-accent-cyan);
+            color: var(--color-accent-cyan);
+        }
+        
+        .build-info {
+            font-size: 10px;
+            color: var(--color-text-secondary);
+            padding: var(--space-md) 0;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            letter-spacing: 0.3px;
+            opacity: 0.6;
+            margin-top: var(--space-lg);
+        }
+        
+        .build-info-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+            opacity: 0.5;
+            margin-bottom: 4px;
+        }
+        
+        /* Tab Bar - Slim, semi-transparent with blur */
         .tab-bar {
             position: fixed;
             bottom: 0;
@@ -323,12 +436,14 @@
             right: 0;
             height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
             padding-bottom: env(safe-area-inset-bottom);
-            background: rgba(10, 14, 26, 0.98);
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid rgba(0, 217, 255, 0.1);
             display: flex;
             justify-content: space-around;
             align-items: flex-start;
-            padding-top: var(--space-sm);
+            padding-top: var(--space-xs);
         }
         
         .tab {
@@ -417,219 +532,7 @@
             color: var(--color-accent-cyan);
         }
         
-        /* Options Panel */
-        .options-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            display: none;
-            align-items: flex-end;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
-        
-        .options-panel.active {
-            display: flex;
-        }
-        
-        .options-content {
-            width: 100%;
-            max-height: 70vh;
-            background: var(--color-bg-navy);
-            border: 1px solid var(--color-card-border);
-            border-radius: var(--border-radius);
-            padding: var(--space-lg);
-            animation: slideUp 0.3s ease;
-            position: relative;
-            overflow-y: auto;
-        }
-        
-        .options-content::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            background: radial-gradient(ellipse at top, rgba(0, 217, 255, 0.2) 0%, transparent 50%);
-            mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-composite: source-in;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .options-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--space-lg);
-            padding-bottom: var(--space-md);
-            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
-        }
-        
-        .options-title {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-accent-cyan);
-        }
-        
-        .close-btn {
-            width: 32px;
-            height: 32px;
-            border: 1px solid var(--color-card-border);
-            border-radius: var(--border-radius);
-            background: var(--color-card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
-        .close-btn svg {
-            width: 16px;
-            height: 16px;
-            stroke: var(--color-text-secondary);
-        }
-        
-        .options-body {
-            color: var(--color-text-secondary);
-        }
-        
-        .options-section {
-            margin-bottom: var(--space-xl);
-        }
-        
-        .options-section-title {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-primary);
-            margin-bottom: var(--space-md);
-        }
-        
-        .icon-upload-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--space-md);
-        }
-        
-        .icon-upload-item {
-            border: 1px solid var(--color-card-border);
-            padding: var(--space-md);
-            background: var(--color-card-bg);
-        }
-        
-        .icon-upload-item label {
-            display: block;
-            font-size: var(--font-size-sm);
-            color: var(--color-accent-cyan);
-            margin-bottom: var(--space-sm);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .icon-preview {
-            width: 40px;
-            height: 40px;
-            margin: var(--space-sm) 0;
-            border: 1px solid var(--color-card-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--color-bg-dark);
-        }
-        
-        .icon-preview svg, .icon-preview img {
-            width: 24px;
-            height: 24px;
-            stroke: var(--color-text-secondary);
-        }
-        
-        .icon-preview img {
-            object-fit: contain;
-        }
-        
-        .icon-upload-item input[type="file"] {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-secondary);
-            margin-bottom: var(--space-xs);
-        }
-        
-        .icon-upload-item button {
-            width: 100%;
-            padding: var(--space-xs);
-            background: none;
-            border: 1px solid var(--color-card-border);
-            color: var(--color-text-secondary);
-            font-size: var(--font-size-xs);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .icon-upload-item button:hover {
-            border-color: var(--color-accent-cyan);
-            color: var(--color-accent-cyan);
-        }
-        
-        /* Build Version */
-        .build-info {
-            font-size: 10px;
-            color: var(--color-text-secondary);
-            padding: var(--space-md) 0;
-            border-top: 1px solid rgba(0, 217, 255, 0.1);
-            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-            letter-spacing: 0.3px;
-            opacity: 0.6;
-            margin-top: var(--space-lg);
-        }
-        
-        .build-info-label {
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--color-text-secondary);
-            opacity: 0.5;
-            margin-bottom: 4px;
-        }
-        
-        /* Desktop Responsive */
         @media (min-width: 768px) {
-            .main {
-                padding-bottom: var(--space-lg);
-            }
-            
             .tab-bar {
                 position: static;
                 height: auto;
@@ -637,12 +540,6 @@
                 margin: 0 auto var(--space-lg);
                 border-radius: var(--border-radius);
                 border: 1px solid var(--color-card-border);
-            }
-            
-            .options-content {
-                max-width: 500px;
-                margin: 0 auto;
-                border-radius: var(--border-radius);
             }
             
             .icon-upload-grid {
@@ -656,87 +553,80 @@
         <header class="header">
             <h1 class="app-title" id="appTitle">MEAL PLAN</h1>
             <div class="page-nav">
-                <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()">←</button>
+                <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()">‹</button>
                 <span id="pageName">Today's Meals</span>
-                <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()">→</button>
+                <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()">›</button>
+                <div class="page-dots" id="pageDots"></div>
             </div>
-            <div class="page-dots" id="pageDots"></div>
         </header>
         
         <main class="main">
             <!-- Meal Plan Tab -->
             <div id="meal-plan" class="tab-content active">
-                <div class="content-wrapper">
-                    <div class="page-slider" id="mealPlanSlider">
-                        <!-- Page 1: Today's Meals -->
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Breakfast</h2>
-                                        <span class="card-badge">Sample</span>
+                <div class="page-carousel" data-carousel="meal-plan">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Breakfast</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Start your day with balanced nutrition</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Calories</span>
+                                        <span class="metric-value">450</span>
                                     </div>
-                                    <div class="card-content">
-                                        <p>Start your day with balanced nutrition</p>
-                                        <div class="card-metric">
-                                            <span class="metric-label">Calories</span>
-                                            <span class="metric-value">450</span>
-                                        </div>
-                                        <div class="card-metric">
-                                            <span class="metric-label">Protein</span>
-                                            <span class="metric-value">25g</span>
-                                        </div>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Protein</span>
+                                        <span class="metric-value">25g</span>
                                     </div>
                                 </div>
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Lunch</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Midday fuel for sustained energy</p>
-                                        <div class="card-metric">
-                                            <span class="metric-label">Calories</span>
-                                            <span class="metric-value">680</span>
-                                        </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Lunch</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Midday fuel for sustained energy</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Calories</span>
+                                        <span class="metric-value">680</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Page 2: Meal Builder -->
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Create Meal</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Build custom meals to fit your macros</p>
-                                        <div class="card-metric">
-                                            <span class="metric-label">Recipes</span>
-                                            <span class="metric-value">120+</span>
-                                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Create Meal</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Build custom meals to fit your macros</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Recipes</span>
+                                        <span class="metric-value">120+</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Page 3: My Meals -->
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Saved Meals</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Your favorite meal combinations</p>
-                                        <div class="card-metric">
-                                            <span class="metric-label">Saved</span>
-                                            <span class="metric-value">12</span>
-                                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Saved Meals</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Your favorite meal combinations</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Saved</span>
+                                        <span class="metric-value">12</span>
                                     </div>
                                 </div>
                             </div>
@@ -747,44 +637,42 @@
             
             <!-- Workouts Tab -->
             <div id="workouts" class="tab-content">
-                <div class="content-wrapper">
-                    <div class="page-slider" id="workoutsSlider">
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 1</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Workouts content placeholder</p>
-                                    </div>
+                <div class="page-carousel" data-carousel="workouts">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 1</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 2</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Workouts content placeholder</p>
-                                    </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 2</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 3</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Workouts content placeholder</p>
-                                    </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 3</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
                                 </div>
                             </div>
                         </div>
@@ -794,114 +682,54 @@
             
             <!-- Schedule Tab -->
             <div id="schedule" class="tab-content">
-                <div class="content-wrapper">
-                    <div class="page-slider" id="scheduleSlider">
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 1</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Schedule content placeholder</p>
-                                    </div>
+                <div class="page-carousel" data-carousel="schedule">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 1</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 2</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Schedule content placeholder</p>
-                                    </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 2</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="page">
-                            <div class="content">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h2 class="card-title">Page 3</h2>
-                                        <span class="card-badge">Sample</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <p>Schedule content placeholder</p>
-                                    </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 3</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-        
-        <!-- Tab Bar -->
-        <nav class="tab-bar">
-            <a href="#meal-plan" class="tab" data-tab="meal-plan" data-title="MEAL PLAN">
-                <div class="tab-icon" id="mealPlanIcon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path>
-                        <line x1="3" y1="2" x2="9" y2="2"></line>
-                    </svg>
-                </div>
-                <span class="tab-label">Meal Plan</span>
-            </a>
-            <a href="#workouts" class="tab" data-tab="workouts" data-title="WORKOUTS">
-                <div class="tab-icon" id="workoutsIcon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6.5 6.5l11 11"></path>
-                        <path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path>
-                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                        <circle cx="18.5" cy="5.5" r="2.5"></circle>
-                    </svg>
-                </div>
-                <span class="tab-label">Workouts</span>
-            </a>
-            <a href="#schedule" class="tab" data-tab="schedule" data-title="SCHEDULE">
-                <div class="tab-icon" id="scheduleIcon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                        <circle cx="8" cy="15" r="1"></circle>
-                        <circle cx="12" cy="15" r="1"></circle>
-                        <circle cx="16" cy="15" r="1"></circle>
-                    </svg>
-                </div>
-                <span class="tab-label">Schedule</span>
-            </a>
-            <a href="javascript:void(0)" class="tab" data-tab="settings" data-title="SETTINGS" onclick="toggleOptions()">
-                <div class="tab-icon" id="settingsIcon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
-                    </svg>
-                </div>
-                <span class="tab-label">Settings</span>
-            </a>
-        </nav>
-        
-        <!-- Options Panel -->
-        <div class="options-panel" id="optionsPanel" onclick="closeOptionsOnBackdrop(event)">
-            <div class="options-content" onclick="event.stopPropagation()">
-                <div class="options-header">
-                    <h2 class="options-title">Settings</h2>
-                    <button class="close-btn" onclick="toggleOptions()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="options-body">
-                    <div class="options-section">
-                        <h3 class="options-section-title">Custom Tab Icons</h3>
+            
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">Custom Tab Icons</h3>
                         <div class="icon-upload-grid">
                             <div class="icon-upload-item">
                                 <label>Meal Plan</label>
@@ -914,7 +742,6 @@
                                 <input type="file" accept="image/*" onchange="uploadIcon('meal-plan', this)" />
                                 <button onclick="resetIcon('meal-plan')">Reset</button>
                             </div>
-                            
                             <div class="icon-upload-item">
                                 <label>Workouts</label>
                                 <div class="icon-preview" id="workoutsPreview">
@@ -928,7 +755,6 @@
                                 <input type="file" accept="image/*" onchange="uploadIcon('workouts', this)" />
                                 <button onclick="resetIcon('workouts')">Reset</button>
                             </div>
-                            
                             <div class="icon-upload-item">
                                 <label>Schedule</label>
                                 <div class="icon-preview" id="schedulePreview">
@@ -945,7 +771,6 @@
                                 <input type="file" accept="image/*" onchange="uploadIcon('schedule', this)" />
                                 <button onclick="resetIcon('schedule')">Reset</button>
                             </div>
-                            
                             <div class="icon-upload-item">
                                 <label>Settings</label>
                                 <div class="icon-preview" id="settingsPreview">
@@ -958,22 +783,67 @@
                                 <button onclick="resetIcon('settings')">Reset</button>
                             </div>
                         </div>
+                        
+                        <div class="build-info">
+                            <div class="build-info-label">Build</div>
+                            <div id="buildInfo">BUILD_TIMESTAMP</div>
+                        </div>
                     </div>
                 </div>
-                <div class="build-info">
-                    <div class="build-info-label">Build</div>
-                    <div id="buildInfo">BUILD_TIMESTAMP</div>
-                </div>
             </div>
-        </div>
+        </main>
+        
+        <!-- Tab Bar -->
+        <nav class="tab-bar">
+            <a href="javascript:void(0)" class="tab" data-tab="meal-plan" data-title="MEAL PLAN" onclick="switchTab('meal-plan', event)">
+                <div class="tab-icon" id="mealPlanIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path>
+                        <line x1="3" y1="2" x2="9" y2="2"></line>
+                    </svg>
+                </div>
+                <span class="tab-label">Meal Plan</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="workouts" data-title="WORKOUTS" onclick="switchTab('workouts', event)">
+                <div class="tab-icon" id="workoutsIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6.5 6.5l11 11"></path>
+                        <path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="5.5" r="2.5"></circle>
+                    </svg>
+                </div>
+                <span class="tab-label">Workouts</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="schedule" data-title="SCHEDULE" onclick="switchTab('schedule', event)">
+                <div class="tab-icon" id="scheduleIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <circle cx="8" cy="15" r="1"></circle>
+                        <circle cx="12" cy="15" r="1"></circle>
+                        <circle cx="16" cy="15" r="1"></circle>
+                    </svg>
+                </div>
+                <span class="tab-label">Schedule</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="settings" data-title="SETTINGS" onclick="switchTab('settings', event)">
+                <div class="tab-icon" id="settingsIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
+                    </svg>
+                </div>
+                <span class="tab-label">Settings</span>
+            </a>
+        </nav>
     </div>
     
     <script>
-        // Display build timestamp
-        const buildTime = 'BUILD_TIMESTAMP';
-        document.getElementById('buildInfo').textContent = buildTime;
+        document.getElementById('buildInfo').textContent = 'BUILD_TIMESTAMP';
         
-        // Tab and Page Configuration
         const tabConfig = {
             'meal-plan': {
                 title: 'MEAL PLAN',
@@ -995,62 +865,57 @@
         
         let currentTab = 'meal-plan';
         let currentPage = 0;
-        let touchStartX = 0;
-        let touchEndX = 0;
         
-        // Tab routing
-        function switchTab(tabName) {
-            if (tabName === 'settings') return;
+        function switchTab(tabName, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            if (currentTab === tabName) return;
             
             currentTab = tabName;
             currentPage = 0;
             
-            // Update content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabName)?.classList.add('active');
             
-            // Update tab bar
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
             
-            // Update header
             const config = tabConfig[tabName];
             document.getElementById('appTitle').textContent = config.title;
             
-            // Update page navigation
             updatePageNavigation();
+            
+            // Use replaceState instead of hash to avoid history entries
+            history.replaceState(null, '', '#' + tabName);
         }
         
         function updatePageNavigation() {
             const config = tabConfig[currentTab];
-            const pageCount = config.pages.length;
+            const pageNav = document.querySelector('.page-nav');
             
-            // Update page name
+            if (config.pages.length === 0) {
+                pageNav.style.display = 'none';
+                return;
+            }
+            
+            pageNav.style.display = 'flex';
+            
             document.getElementById('pageName').textContent = config.pages[currentPage] || '';
             
-            // Update buttons
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             prevBtn.disabled = currentPage === 0;
-            nextBtn.disabled = currentPage === pageCount - 1;
+            nextBtn.disabled = currentPage === config.pages.length - 1;
             
-            // Update dots
             const dotsContainer = document.getElementById('pageDots');
             dotsContainer.innerHTML = '';
-            for (let i = 0; i < pageCount; i++) {
+            for (let i = 0; i < config.pages.length; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'page-dot' + (i === currentPage ? ' active' : '');
                 dotsContainer.appendChild(dot);
-            }
-            
-            // Update slider position
-            const slider = document.querySelector(`#${currentTab} .page-slider`);
-            if (slider) {
-                slider.style.transform = `translateX(-${currentPage * 100}%)`;
             }
         }
         
@@ -1058,6 +923,8 @@
             const config = tabConfig[currentTab];
             if (currentPage < config.pages.length - 1) {
                 currentPage++;
+                const carousel = document.querySelector(`#${currentTab} .page-carousel`);
+                carousel.scrollLeft = currentPage * carousel.offsetWidth;
                 updatePageNavigation();
             }
         }
@@ -1065,89 +932,36 @@
         function previousPage() {
             if (currentPage > 0) {
                 currentPage--;
+                const carousel = document.querySelector(`#${currentTab} .page-carousel`);
+                carousel.scrollLeft = currentPage * carousel.offsetWidth;
                 updatePageNavigation();
             }
         }
         
-        // Touch/Swipe handling
-        function setupSwipeHandling() {
-            document.querySelectorAll('.tab-content').forEach(tabContent => {
-                const slider = tabContent.querySelector('.page-slider');
-                if (!slider) return;
+        // Setup scroll listeners for carousels
+        function setupCarousels() {
+            document.querySelectorAll('.page-carousel').forEach(carousel => {
+                let scrollTimeout;
                 
-                slider.addEventListener('touchstart', e => {
-                    touchStartX = e.touches[0].clientX;
+                carousel.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        const pageWidth = carousel.offsetWidth;
+                        const newPage = Math.round(carousel.scrollLeft / pageWidth);
+                        if (newPage !== currentPage) {
+                            currentPage = newPage;
+                            updatePageNavigation();
+                        }
+                    }, 100);
                 }, { passive: true });
-                
-                slider.addEventListener('touchmove', e => {
-                    touchEndX = e.touches[0].clientX;
-                }, { passive: true });
-                
-                slider.addEventListener('touchend', () => {
-                    handleSwipe();
-                });
             });
-        }
-        
-        function handleSwipe() {
-            const swipeThreshold = 50;
-            const diff = touchStartX - touchEndX;
-            
-            if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                    // Swipe left - next page
-                    nextPage();
-                } else {
-                    // Swipe right - previous page
-                    previousPage();
-                }
-            }
         }
         
         // Keyboard navigation
         document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') {
-                previousPage();
-            } else if (e.key === 'ArrowRight') {
-                nextPage();
-            }
+            if (e.key === 'ArrowLeft') previousPage();
+            else if (e.key === 'ArrowRight') nextPage();
         });
-        
-        // Hash routing
-        function handleHashChange() {
-            const hash = window.location.hash.slice(1) || 'meal-plan';
-            switchTab(hash);
-        }
-        
-        window.addEventListener('hashchange', handleHashChange);
-        window.addEventListener('load', () => {
-            handleHashChange();
-            setupSwipeHandling();
-            loadCustomIcons();
-        });
-        
-        // Options panel
-        function toggleOptions() {
-            const panel = document.getElementById('optionsPanel');
-            const isOpening = !panel.classList.contains('active');
-            panel.classList.toggle('active');
-            
-            const settingsTab = document.querySelector('.tab[data-tab="settings"]');
-            if (isOpening) {
-                settingsTab?.classList.add('active');
-                document.getElementById('appTitle').textContent = 'SETTINGS';
-            } else {
-                settingsTab?.classList.remove('active');
-                const config = tabConfig[currentTab];
-                document.getElementById('appTitle').textContent = config.title;
-            }
-        }
-        
-        function closeOptionsOnBackdrop(event) {
-            if (event.target.id === 'optionsPanel') {
-                toggleOptions();
-            }
-        }
         
         // Custom Icon Management
         function uploadIcon(tabName, input) {
@@ -1169,22 +983,22 @@
         }
         
         function updateIcon(tabName, dataUrl) {
-            const iconContainer = document.getElementById(`${tabName === 'meal-plan' ? 'mealPlan' : tabName}Icon`);
-            const preview = document.getElementById(`${tabName === 'meal-plan' ? 'mealPlan' : tabName}Preview`);
+            const iconId = tabName === 'meal-plan' ? 'mealPlanIcon' : tabName + 'Icon';
+            const previewId = tabName === 'meal-plan' ? 'mealPlanPreview' : tabName + 'Preview';
+            const iconContainer = document.getElementById(iconId);
+            const preview = document.getElementById(previewId);
+            
+            const svgMap = {
+                'meal-plan': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path><line x1="3" y1="2" x2="9" y2="2"></line></svg>',
+                'workouts': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"></path><path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="5.5" r="2.5"></circle></svg>',
+                'schedule': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
+                'settings': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path></svg>'
+            };
             
             if (dataUrl) {
-                // Update tab bar icon
                 iconContainer.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
-                // Update preview
                 preview.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
             } else {
-                // Restore default SVG
-                const svgMap = {
-                    'meal-plan': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2m7 0v20m-2-8h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4"></path><line x1="3" y1="2" x2="9" y2="2"></line></svg>',
-                    'workouts': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"></path><path d="M21 3l-4 4-2-2-4 4-2-2-4 4-2-2-1 1"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="5.5" r="2.5"></circle></svg>',
-                    'schedule': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>',
-                    'settings': '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path></svg>'
-                };
                 iconContainer.innerHTML = svgMap[tabName];
                 preview.innerHTML = svgMap[tabName];
             }
@@ -1193,41 +1007,34 @@
         function loadCustomIcons() {
             ['meal-plan', 'workouts', 'schedule', 'settings'].forEach(tabName => {
                 const dataUrl = localStorage.getItem(`icon-${tabName}`);
-                if (dataUrl) {
-                    updateIcon(tabName, dataUrl);
-                }
+                if (dataUrl) updateIcon(tabName, dataUrl);
             });
         }
         
-        // Register service worker with auto-update
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.slice(1) || 'meal-plan';
+            switchTab(hash);
+            setupCarousels();
+            loadCustomIcons();
+        });
+        
+        // Service worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration);
-                        
-                        registration.update();
-                        
-                        document.addEventListener('visibilitychange', () => {
-                            if (!document.hidden) {
-                                registration.update();
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => {
+                    reg.update();
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) reg.update();
+                    });
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                window.location.reload();
                             }
                         });
-                        
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'activated') {
-                                    if (navigator.serviceWorker.controller) {
-                                        console.log('New version available, reloading...');
-                                        window.location.reload();
-                                    }
-                                }
-                            });
-                        });
-                    })
-                    .catch(err => console.error('ServiceWorker registration failed:', err));
-            });
+                    });
+                });
         }
     </script>
 </body>
