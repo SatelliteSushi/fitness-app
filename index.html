@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Fitness">
@@ -10,9 +10,47 @@
     
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icon-180.png">
-    <meta name="theme-color" content="#4A90E2">
+    <meta name="theme-color" content="#0a0e1a">
     
     <style>
+        /* Design Tokens */
+        :root {
+            /* Colors */
+            --color-bg-dark: #0a0e1a;
+            --color-bg-navy: #121b2d;
+            --color-accent-cyan: #00d9ff;
+            --color-accent-blue: #0066ff;
+            --color-text-primary: #e8eef5;
+            --color-text-secondary: #8b9bb0;
+            --color-card-border: rgba(0, 217, 255, 0.3);
+            --color-card-bg: rgba(18, 27, 45, 0.6);
+            --color-glow: rgba(0, 217, 255, 0.15);
+            
+            /* Spacing */
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Typography */
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+            --font-size-xs: 11px;
+            --font-size-sm: 13px;
+            --font-size-base: 15px;
+            --font-size-lg: 20px;
+            --font-size-xl: 28px;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            
+            /* Layout */
+            --border-radius: 12px;
+            --border-width: 1px;
+            --card-gap: var(--space-md);
+        }
+        
+        /* Reset & Base */
         * {
             margin: 0;
             padding: 0;
@@ -20,44 +58,230 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            color: var(--color-text-primary);
+            background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-bg-navy) 100%);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        /* Layout Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: var(--space-lg) var(--space-md);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            margin-bottom: var(--space-xl);
+        }
+        
+        .app-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Card Component */
+        .card {
+            background: var(--color-card-bg);
+            border: var(--border-width) solid var(--color-card-border);
+            border-radius: var(--border-radius);
+            padding: var(--space-lg);
+            margin-bottom: var(--card-gap);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px var(--color-glow);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            border-color: var(--color-accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.25);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+        
+        .card-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            letter-spacing: -0.3px;
+        }
+        
+        .card-badge {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 8px;
+            border: 1px solid var(--color-card-border);
+            border-radius: 6px;
+            background: rgba(0, 217, 255, 0.05);
+        }
+        
+        .card-content {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+        
+        .card-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: var(--space-sm);
+            padding-top: var(--space-sm);
+            border-top: 1px solid rgba(139, 155, 176, 0.1);
+        }
+        
+        .metric-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+        
+        .metric-value {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+        }
+        
+        /* Dashboard Grid */
+        .dashboard {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+            gap: var(--card-gap);
         }
         
-        h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        
-        .version {
+        /* Build Version */
+        .build-info {
             position: fixed;
-            bottom: 10px;
-            right: 10px;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            bottom: env(safe-area-inset-bottom, 10px);
+            right: env(safe-area-inset-right, 10px);
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            background: rgba(10, 14, 26, 0.8);
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            backdrop-filter: blur(10px);
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Loading State */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        .skeleton {
+            animation: pulse 2s ease-in-out infinite;
         }
     </style>
 </head>
 <body>
-    <h1>Hello</h1>
-    <div class="version" id="version">Build: BUILD_TIMESTAMP</div>
+    <div class="container">
+        <header class="header">
+            <h1 class="app-title">FITNESS</h1>
+        </header>
+        
+        <div class="dashboard">
+            <!-- Today Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Today</h2>
+                    <span class="card-badge">Sample</span>
+                </div>
+                <div class="card-content">
+                    <p>Your daily overview and activity summary</p>
+                    <div class="card-metric">
+                        <span class="metric-label">Steps</span>
+                        <span class="metric-value">8,450</span>
+                    </div>
+                    <div class="card-metric">
+                        <span class="metric-label">Calories</span>
+                        <span class="metric-value">2,180</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Training Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Training</h2>
+                    <span class="card-badge">Sample</span>
+                </div>
+                <div class="card-content">
+                    <p>Track your workouts and progress</p>
+                    <div class="card-metric">
+                        <span class="metric-label">This Week</span>
+                        <span class="metric-value">4 Sessions</span>
+                    </div>
+                    <div class="card-metric">
+                        <span class="metric-label">Duration</span>
+                        <span class="metric-value">3h 45m</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nutrition Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Nutrition</h2>
+                    <span class="card-badge">Sample</span>
+                </div>
+                <div class="card-content">
+                    <p>Monitor your nutrition and hydration</p>
+                    <div class="card-metric">
+                        <span class="metric-label">Protein</span>
+                        <span class="metric-value">145g</span>
+                    </div>
+                    <div class="card-metric">
+                        <span class="metric-label">Water</span>
+                        <span class="metric-value">2.4L</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Progress</h2>
+                    <span class="card-badge">Sample</span>
+                </div>
+                <div class="card-content">
+                    <p>Review your fitness journey</p>
+                    <div class="card-metric">
+                        <span class="metric-label">Streak</span>
+                        <span class="metric-value">12 Days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="build-info" id="buildInfo">BUILD_TIMESTAMP</div>
     
     <script>
         // Display build timestamp
         const buildTime = 'BUILD_TIMESTAMP';
-        document.getElementById('version').textContent = `Build: ${buildTime}`;
+        document.getElementById('buildInfo').textContent = buildTime;
         
-        // Register service worker
+        // Register service worker with auto-update
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')

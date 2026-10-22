@@ -4,8 +4,8 @@
   "description": "Fitness PWA",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#667eea",
-  "theme_color": "#4A90E2",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
   "icons": [
     {
       "src": "./icon-192.png",
