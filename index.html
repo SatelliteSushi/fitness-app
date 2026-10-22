@@ -1097,17 +1097,28 @@
             });
         }
         
-        window.addEventListener('load', () => {
+        // Initialize app
+        function initApp() {
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
             // Initialize tab bar indicator
             const tabBar = document.querySelector('.tab-bar');
-            tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+            if (tabBar) {
+                tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+            }
             
             switchTab(hash);
             setupCarousels();
             loadCustomIcons();
-        });
+        }
+        
+        // Use DOMContentLoaded for faster initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            // Document already loaded, init immediately
+            initApp();
+        }
         
         // Re-measure on resize
         window.addEventListener('resize', () => {
