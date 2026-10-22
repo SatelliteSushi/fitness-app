@@ -1,0 +1,78 @@
+
+Running 6 tests using 1 worker
+
+(node:13786) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Page nav visible: true
+Page name count: 0
+  ✘  1 [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load (6.8s)
+(node:13873) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Meal Plan scroll after swipe: 0
+  ✘  2 [webkit] › test-webkit.spec.js:47:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs (2.6s)
+(node:13961) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Prev button HTML: 
+Next button HTML: 
+Left chevrons: 0 Right chevrons: 0
+WARNING: No chevrons found - navigation may not be initialized
+  ✓  3 [webkit] › test-webkit.spec.js:119:3 › PWA UI Fixes - iPhone 14 WebKit › should show correct chevron counts (1.8s)
+Header backdrop-filter: none
+Card backdrop-filter: none
+  ✓  4 [webkit] › test-webkit.spec.js:156:3 › PWA UI Fixes - iPhone 14 WebKit › should have no blur effects (773ms)
+Page nav gap: 4px
+Page nav display: flex
+  ✓  5 [webkit] › test-webkit.spec.js:186:3 › PWA UI Fixes - iPhone 14 WebKit › should have arrows close to page name (755ms)
+Screenshot saved to webkit-header-screenshot.png
+  ✓  6 [webkit] › test-webkit.spec.js:211:3 › PWA UI Fixes - iPhone 14 WebKit › should take screenshot for visual verification (1.8s)
+
+
+  1) [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('#pageNameContainer')
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('#pageNameContainer') with timeout 5000ms
+      - waiting for locator('#pageNameContainer')
+        14 × locator resolved to <div id="pageNameContainer" class="page-name-container"></div>
+           - unexpected value "hidden"
+
+
+      31 |     // Check that page name is visible on first load (Meal Plan tab, first page)
+      32 |     const pageNameContainer = page.locator('#pageNameContainer');
+    > 33 |     await expect(pageNameContainer).toBeVisible();
+         |                                     ^
+      34 |     
+      35 |     if (pageNameCount > 0) {
+      36 |       const firstPageName = pageNameContainer.locator('.page-name').first();
+        at /workspace/test-webkit.spec.js:33:37
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---f7053-ow-page-titles-on-cold-load-webkit/error-context.md
+
+  2) [webkit] › test-webkit.spec.js:47:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      86 |     const mealPlanScroll = await mealPlanCarousel.evaluate(el => el.scrollLeft);
+      87 |     console.log('Meal Plan scroll after swipe:', mealPlanScroll);
+    > 88 |     expect(mealPlanScroll).toBeGreaterThan(0);
+         |                            ^
+      89 |     
+      90 |     // Switch to Workouts tab
+      91 |     await page.locator('.tab[data-tab="workouts"]').click();
+        at /workspace/test-webkit.spec.js:88:28
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---0c650-d-allow-swiping-on-all-tabs-webkit/error-context.md
+
+  2 failed
+    [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load 
+    [webkit] › test-webkit.spec.js:47:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs 
+  4 passed (16.0s)

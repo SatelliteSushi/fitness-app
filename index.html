@@ -927,12 +927,15 @@
             // Measure widths synchronously (for container sizing only)
             config.pages.forEach((pageName, index) => {
                 const el = pageNameElements[index];
-                pageNameWidths[index] = el.offsetWidth || 120;
+                const width = el.offsetWidth || 120;
+                pageNameWidths[index] = width;
             });
             
             // Set container width to widest page name
-            const maxWidth = Math.max(...Object.values(pageNameWidths));
+            const widths = Object.values(pageNameWidths).filter(w => w > 0);
+            const maxWidth = widths.length > 0 ? Math.max(...widths) : 120;
             container.style.width = `${maxWidth}px`;
+            container.style.minWidth = `${maxWidth}px`;
             
             // Update immediately
             updateChevrons(currentPage, config.pages.length);
@@ -944,8 +947,10 @@
                         const el = pageNameElements[index];
                         if (el) pageNameWidths[index] = el.offsetWidth || 120;
                     });
-                    const newMaxWidth = Math.max(...Object.values(pageNameWidths));
+                    const newWidths = Object.values(pageNameWidths).filter(w => w > 0);
+                    const newMaxWidth = newWidths.length > 0 ? Math.max(...newWidths) : 120;
                     container.style.width = `${newMaxWidth}px`;
+                    container.style.minWidth = `${newMaxWidth}px`;
                 });
             }
         }
