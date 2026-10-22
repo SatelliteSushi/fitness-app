@@ -1,0 +1,93 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+      
+      - name: Prepare deployment files
+        run: |
+          mkdir -p deploy
+          cp index.html manifest.json service-worker.js icon-*.png deploy/
+          
+          # Replace BUILD_TIMESTAMP with actual timestamp
+          BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          sed -i "s/BUILD_TIMESTAMP/$BUILD_TIME/g" deploy/index.html
+          
+          # Update service worker and manifest paths for preview subfolder
+          PREVIEW_PATH="preview/pr-${{ github.event.pull_request.number }}"
+          
+          # Update manifest start_url for preview
+          sed -i 's|"start_url": "./"|"start_url": "."|g' deploy/manifest.json
+          
+          echo "Build timestamp: $BUILD_TIME"
+          echo "Preview path: $PREVIEW_PATH"
+      
+      - name: Deploy to GitHub Pages preview
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          destination_dir: preview/pr-${{ github.event.pull_request.number }}
+          keep_files: true
+      
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://satellitesushi.github.io/fitness-app/preview/pr-${prNumber}/`;
+            
+            const comment = `## 🚀 Preview Deployment
+            
+            Your changes have been deployed to a preview environment:
+            
+            **Preview URL:** ${previewUrl}
+            
+            This preview will update automatically with new commits to this PR.
+            
+            ---
+            *Preview deployments are kept until the PR is closed or merged.*`;
+            
+            // Check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Preview Deployment')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }
