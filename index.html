@@ -92,7 +92,7 @@
             height: var(--header-height);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             padding: 0 var(--space-md);
             border-bottom: 1px solid rgba(0, 217, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -107,73 +107,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        }
-        
-        .options-btn {
-            width: 36px;
-            height: 36px;
-            border: 1px solid var(--color-card-border);
-            border-radius: var(--border-radius);
-            background: var(--color-card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        
-        .options-btn::before {
-            content: '';
-            position: absolute;
-            inset: -8px;
-            background: radial-gradient(circle at center, var(--color-glow) 0%, transparent 60%);
-            mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-image: 
-                repeating-linear-gradient(0deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size)),
-                repeating-linear-gradient(90deg, 
-                    transparent 0px, 
-                    transparent calc(var(--matrix-cell-size) - 1px),
-                    black calc(var(--matrix-cell-size) - 1px),
-                    black var(--matrix-cell-size));
-            -webkit-mask-composite: source-in;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .options-btn:hover {
-            border-color: var(--color-accent-cyan);
-        }
-        
-        .options-btn:hover::before {
-            opacity: 1;
-        }
-        
-        .options-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: var(--color-text-secondary);
-            transition: stroke 0.2s ease;
-        }
-        
-        .options-btn:hover svg {
-            stroke: var(--color-accent-cyan);
         }
         
         /* Main Content */
@@ -558,12 +491,6 @@
     <div class="app">
         <header class="header">
             <h1 class="app-title">FITNESS</h1>
-            <button class="options-btn" onclick="toggleOptions()">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
-                </svg>
-            </button>
         </header>
         
         <main class="main">
@@ -711,6 +638,15 @@
                 </div>
                 <span class="tab-label">Schedule</span>
             </a>
+            <a href="javascript:void(0)" class="tab" data-tab="settings" onclick="toggleOptions()">
+                <div class="tab-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m-5.5-11L9 10.5m6 3L17.5 16M1 12h6m6 0h6m-11-5.5L10.5 9m3 6L16 17.5m-11-11L7.5 9m9 6L19 17.5"></path>
+                    </svg>
+                </div>
+                <span class="tab-label">Settings</span>
+            </a>
         </nav>
         
         <!-- Options Panel -->
@@ -741,6 +677,9 @@
         
         // Tab routing
         function switchTab(tabName) {
+            // Don't switch if it's the settings tab
+            if (tabName === 'settings') return;
+            
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -766,7 +705,16 @@
         // Options panel
         function toggleOptions() {
             const panel = document.getElementById('optionsPanel');
+            const isOpening = !panel.classList.contains('active');
             panel.classList.toggle('active');
+            
+            // Highlight settings tab when panel is open
+            const settingsTab = document.querySelector('.tab[data-tab="settings"]');
+            if (isOpening) {
+                settingsTab?.classList.add('active');
+            } else {
+                settingsTab?.classList.remove('active');
+            }
         }
         
         function closeOptionsOnBackdrop(event) {
