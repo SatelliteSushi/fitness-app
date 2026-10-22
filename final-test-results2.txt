@@ -1,0 +1,97 @@
+
+Running 6 tests using 1 worker
+
+(node:16189) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load (30.0s)
+(node:16296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [webkit] › test-webkit.spec.js:57:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs (30.0s)
+(node:16402) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [webkit] › test-webkit.spec.js:139:3 › PWA UI Fixes - iPhone 14 WebKit › should show correct chevron counts (30.0s)
+(node:16511) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Header backdrop-filter: none
+Card backdrop-filter: none
+  ✓  4 [webkit] › test-webkit.spec.js:186:3 › PWA UI Fixes - iPhone 14 WebKit › should have no blur effects (773ms)
+Page nav gap: 4px
+Page nav display: flex
+  ✓  5 [webkit] › test-webkit.spec.js:220:3 › PWA UI Fixes - iPhone 14 WebKit › should have arrows close to page name (753ms)
+  ✘  6 [webkit] › test-webkit.spec.js:249:3 › PWA UI Fixes - iPhone 14 WebKit › should take screenshot for visual verification (30.0s)
+
+
+  1) [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForTimeout: Target page, context or browser has been closed
+
+      27 |     }, { timeout: 5000 }).catch(() => null);
+      28 |     
+    > 29 |     await page.waitForTimeout(500);
+         |                ^
+      30 |     
+      31 |     // Wait for fonts to load
+      32 |     await page.waitForFunction(() => document.fonts.ready);
+        at /workspace/test-webkit.spec.js:29:16
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---f7053-ow-page-titles-on-cold-load-webkit/error-context.md
+
+  2) [webkit] › test-webkit.spec.js:57:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForTimeout: Target page, context or browser has been closed
+
+      73 |     }, { timeout: 5000 }).catch(() => null);
+      74 |     
+    > 75 |     await page.waitForTimeout(500);
+         |                ^
+      76 |     
+      77 |     // Helper function to perform swipe gesture
+      78 |     async function swipe(locator) {
+        at /workspace/test-webkit.spec.js:75:16
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---0c650-d-allow-swiping-on-all-tabs-webkit/error-context.md
+
+  3) [webkit] › test-webkit.spec.js:139:3 › PWA UI Fixes - iPhone 14 WebKit › should show correct chevron counts 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForTimeout: Target page, context or browser has been closed
+
+      155 |     }, { timeout: 5000 }).catch(() => null);
+      156 |     
+    > 157 |     await page.waitForTimeout(500);
+          |                ^
+      158 |     
+      159 |     // On page 0 of Meal Plan (3 pages total)
+      160 |     const prevBtn = page.locator('#prevPageBtn');
+        at /workspace/test-webkit.spec.js:157:16
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---2f3b0-show-correct-chevron-counts-webkit/error-context.md
+
+  4) [webkit] › test-webkit.spec.js:249:3 › PWA UI Fixes - iPhone 14 WebKit › should take screenshot for visual verification 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForTimeout: Target page, context or browser has been closed
+
+      265 |     }, { timeout: 5000 }).catch(() => null);
+      266 |     
+    > 267 |     await page.waitForTimeout(1000);
+          |                ^
+      268 |     
+      269 |     // Take screenshot of header area
+      270 |     await page.screenshot({ path: '/workspace/webkit-header-screenshot.png', fullPage: false });
+        at /workspace/test-webkit.spec.js:267:16
+
+    Error Context: test-results/test-webkit-PWA-UI-Fixes---3d676-hot-for-visual-verification-webkit/error-context.md
+
+  4 failed
+    [webkit] › test-webkit.spec.js:10:3 › PWA UI Fixes - iPhone 14 WebKit › should show page titles on cold load 
+    [webkit] › test-webkit.spec.js:57:3 › PWA UI Fixes - iPhone 14 WebKit › should allow swiping on all tabs 
+    [webkit] › test-webkit.spec.js:139:3 › PWA UI Fixes - iPhone 14 WebKit › should show correct chevron counts 
+    [webkit] › test-webkit.spec.js:249:3 › PWA UI Fixes - iPhone 14 WebKit › should take screenshot for visual verification 
+  2 passed (2.1m)

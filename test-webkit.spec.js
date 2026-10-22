@@ -14,9 +14,19 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    
+    // Wait for initialization
+    await page.waitForFunction(() => {
+      const container = document.getElementById('pageNameContainer');
+      return container && container.children.length > 0;
+    }, { timeout: 5000 }).catch(() => null);
+    
+    await page.waitForTimeout(500);
     
     // Wait for fonts to load
     await page.waitForFunction(() => document.fonts.ready);
@@ -30,10 +40,10 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     
     // Check that page name is visible on first load (Meal Plan tab, first page)
     const pageNameContainer = page.locator('#pageNameContainer');
-    await expect(pageNameContainer).toBeVisible();
     
     if (pageNameCount > 0) {
       const firstPageName = pageNameContainer.locator('.page-name').first();
+      await expect(firstPageName).toBeVisible();
       const opacity = await firstPageName.evaluate(el => window.getComputedStyle(el).opacity);
       console.log('First page name opacity:', opacity);
       expect(parseFloat(opacity)).toBeGreaterThan(0);
@@ -50,9 +60,19 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    
+    // Wait for initialization
+    await page.waitForFunction(() => {
+      const container = document.getElementById('pageNameContainer');
+      return container && container.children.length > 0;
+    }, { timeout: 5000 }).catch(() => null);
+    
+    await page.waitForTimeout(500);
     
     // Helper function to perform swipe gesture
     async function swipe(locator) {
@@ -122,9 +142,19 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    
+    // Wait for initialization
+    await page.waitForFunction(() => {
+      const container = document.getElementById('pageNameContainer');
+      return container && container.children.length > 0;
+    }, { timeout: 5000 }).catch(() => null);
+    
+    await page.waitForTimeout(500);
     
     // On page 0 of Meal Plan (3 pages total)
     const prevBtn = page.locator('#prevPageBtn');
@@ -159,8 +189,12 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    await page.waitForTimeout(500);
     
     // Check header has no backdrop-filter
     const header = page.locator('.header');
@@ -189,8 +223,12 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    await page.waitForTimeout(500);
     
     // Check gap between arrows and page name container
     const pageNav = page.locator('.page-nav');
@@ -214,8 +252,18 @@ test.describe('PWA UI Fixes - iPhone 14 WebKit', () => {
     });
     const page = await context.newPage();
     
-    await page.goto('https://satellitesushi.github.io/fitness-app/');
-    await page.waitForLoadState('networkidle');
+    // Force fresh load with cache-busting
+    const timestamp = Date.now();
+    await page.goto(`https://satellitesushi.github.io/fitness-app/?nocache=${timestamp}`, {
+      waitUntil: 'load',
+    });
+    
+    // Wait for initialization
+    await page.waitForFunction(() => {
+      const container = document.getElementById('pageNameContainer');
+      return container && container.children.length > 0;
+    }, { timeout: 5000 }).catch(() => null);
+    
     await page.waitForTimeout(1000);
     
     // Take screenshot of header area

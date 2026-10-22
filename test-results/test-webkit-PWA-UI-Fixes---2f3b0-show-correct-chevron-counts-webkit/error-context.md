@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: test-debug.spec.js >> debug page initialization
-- Location: test-debug.spec.js:8:1
+- Name: test-webkit.spec.js >> PWA UI Fixes - iPhone 14 WebKit >> should show correct chevron counts
+- Location: test-webkit.spec.js:139:3
 
 # Error details
 
