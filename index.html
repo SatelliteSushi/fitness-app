@@ -1129,6 +1129,7 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./service-worker.js')
                 .then(reg => {
+                    if (!reg) return; // Handle blocked/failed registration
                     reg.update();
                     document.addEventListener('visibilitychange', () => {
                         if (!document.hidden) reg.update();
@@ -1141,6 +1142,10 @@
                             }
                         });
                     });
+                })
+                .catch(err => {
+                    // Service worker registration failed (e.g., blocked by browser/test)
+                    console.log('Service worker registration failed:', err);
                 });
         }
     </script>
