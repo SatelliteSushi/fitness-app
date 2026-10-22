@@ -817,7 +817,10 @@
             const pageNav = document.getElementById('pageNav');
             const titlesRow = document.getElementById('pageTitlesRow');
             
-            if (!pageNav || !titlesRow) return;
+            if (!pageNav || !titlesRow) {
+                console.error('Page nav elements not found');
+                return;
+            }
             
             if (config.pages.length === 0) {
                 pageNav.style.display = 'none';
@@ -848,8 +851,15 @@
                 }
             });
             
-            // Center the focused title if row is wider than screen
-            requestAnimationFrame(() => centerFocusedTitle());
+            // Force layout calculation before centering
+            titlesRow.offsetWidth;
+            
+            // Center the focused title - use multiple rAF to ensure layout is complete
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    centerFocusedTitle();
+                });
+            });
         }
         
         function centerFocusedTitle() {
@@ -861,9 +871,17 @@
             const rowWidth = titlesRow.scrollWidth;
             const navWidth = pageNav.offsetWidth;
             
-            // If row fits in nav, center it naturally (no transform needed)
+            // If row fits in nav, still center the focused title
             if (rowWidth <= navWidth) {
-                titlesRow.style.transform = 'translateX(0)';
+                // Center the focused title even when row is short
+                const focusedEl = pageTitleElements[currentPage];
+                if (!focusedEl) return;
+                
+                const focusedOffset = focusedEl.offsetLeft + focusedEl.offsetWidth / 2;
+                const navCenter = navWidth / 2;
+                const translateX = navCenter - focusedOffset;
+                
+                titlesRow.style.transform = `translateX(${translateX}px)`;
                 return;
             }
             
@@ -872,16 +890,12 @@
             if (!focusedEl) return;
             
             // Calculate offset needed to center the focused title
+            // ALWAYS center - no clamping, even for first/last pages
             const focusedOffset = focusedEl.offsetLeft + focusedEl.offsetWidth / 2;
             const navCenter = navWidth / 2;
             const translateX = navCenter - focusedOffset;
             
-            // Clamp translateX so we don't show empty space on either end
-            const minTranslate = navWidth - rowWidth;
-            const maxTranslate = 0;
-            const clampedTranslate = Math.max(minTranslate, Math.min(maxTranslate, translateX));
-            
-            titlesRow.style.transform = `translateX(${clampedTranslate}px)`;
+            titlesRow.style.transform = `translateX(${translateX}px)`;
         }
         
         function jumpToPage(pageIndex) {
@@ -934,19 +948,13 @@
                 }
             });
             
-            // Interpolate centering position
+            // Interpolate centering position - ALWAYS center, no clamping
             const titlesRow = document.getElementById('pageTitlesRow');
             const pageNav = document.getElementById('pageNav');
             
             if (!titlesRow || !pageNav) return;
             
-            const rowWidth = titlesRow.scrollWidth;
             const navWidth = pageNav.offsetWidth;
-            
-            if (rowWidth <= navWidth) {
-                titlesRow.style.transform = 'translateX(0)';
-                return;
-            }
             
             // Calculate positions for both pages
             const fromEl = pageTitleElements[fromPage];
@@ -962,12 +970,7 @@
             const currentOffset = fromOffset + (toOffset - fromOffset) * progress;
             const translateX = navCenter - currentOffset;
             
-            // Clamp translateX
-            const minTranslate = navWidth - rowWidth;
-            const maxTranslate = 0;
-            const clampedTranslate = Math.max(minTranslate, Math.min(maxTranslate, translateX));
-            
-            titlesRow.style.transform = `translateX(${clampedTranslate}px)`;
+            titlesRow.style.transform = `translateX(${translateX}px)`;
         }
         
         
@@ -1068,6 +1071,7 @@
         
         // Initialize app
         function initApp() {
+            console.log('initApp called');
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
             // Initialize tab bar indicator
@@ -1079,6 +1083,8 @@
             switchTab(hash);
             setupCarousels();
             loadCustomIcons();
+            
+            console.log('initApp complete');
         }
         
         // Use DOMContentLoaded for faster initialization
@@ -1088,6 +1094,15 @@
             // Document already loaded, init immediately
             initApp();
         }
+        
+        // Fallback: ensure init runs after a short delay if it hasn't already
+        setTimeout(() => {
+            const titlesRow = document.getElementById('pageTitlesRow');
+            if (!titlesRow || titlesRow.children.length === 0) {
+                console.log('Fallback init triggered');
+                initApp();
+            }
+        }, 100);
         
         // Re-measure on resize
         window.addEventListener('resize', () => {
