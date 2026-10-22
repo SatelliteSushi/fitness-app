@@ -82,7 +82,7 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
         
-        /* Header - Sticky, slim, semi-transparent */
+        /* Header - Sticky, solid dark */
         .header {
             position: sticky;
             top: 0;
@@ -94,9 +94,7 @@
             justify-content: center;
             padding: var(--space-sm) var(--space-md);
             gap: var(--space-xs);
-            background: rgba(10, 14, 26, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--color-bg-dark);
             border-bottom: 1px solid rgba(0, 217, 255, 0.1);
         }
         
@@ -116,11 +114,10 @@
             content: '';
             position: absolute;
             bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
+            left: 0;
+            width: 100%;
             height: 1px;
-            background: linear-gradient(90deg, transparent 0%, rgba(0, 217, 255, 0.2) 50%, transparent 100%);
+            background: rgba(0, 217, 255, 0.1);
         }
         
         /* Page Navigation */
@@ -149,7 +146,11 @@
             top: 0;
             transform: translateX(-50%);
             white-space: nowrap;
-            transition: none;
+            opacity: 1;
+        }
+        
+        .page-name.hidden {
+            opacity: 0;
         }
         
         .page-nav-btn {
@@ -455,7 +456,7 @@
             margin-bottom: 4px;
         }
         
-        /* Tab Bar - Slim, semi-transparent with blur */
+        /* Tab Bar - Fixed at bottom, extends through safe area */
         .tab-bar {
             position: fixed;
             bottom: 0;
@@ -463,9 +464,7 @@
             right: 0;
             height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
             padding-bottom: env(safe-area-inset-bottom);
-            background: rgba(10, 14, 26, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--color-bg-dark);
             border-top: 1px solid rgba(0, 217, 255, 0.1);
             display: flex;
             justify-content: space-around;
@@ -929,56 +928,36 @@
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             
-            const pagesLeft = currentPageNum;
-            const pagesRight = totalPages - currentPageNum - 1;
+            const maxChevrons = totalPages - 1;
+            const leftActiveCount = currentPageNum;
+            const rightActiveCount = totalPages - 1 - currentPageNum;
             
             // Update left chevrons
             prevBtn.innerHTML = '';
-            for (let i = 0; i < pagesLeft; i++) {
+            for (let i = 0; i < maxChevrons; i++) {
                 const chevron = document.createElement('div');
                 chevron.className = 'chevron';
+                const isActive = i < leftActiveCount;
+                chevron.style.opacity = isActive ? '1' : '0.2';
                 chevron.innerHTML = createChevronSVG('left');
+                if (!isActive) {
+                    chevron.style.color = 'var(--color-text-secondary)';
+                }
                 prevBtn.appendChild(chevron);
             }
-            prevBtn.disabled = pagesLeft === 0;
             
             // Update right chevrons
             nextBtn.innerHTML = '';
-            for (let i = 0; i < pagesRight; i++) {
+            for (let i = 0; i < maxChevrons; i++) {
                 const chevron = document.createElement('div');
                 chevron.className = 'chevron';
+                const isActive = i < rightActiveCount;
+                chevron.style.opacity = isActive ? '1' : '0.2';
                 chevron.innerHTML = createChevronSVG('right');
+                if (!isActive) {
+                    chevron.style.color = 'var(--color-text-secondary)';
+                }
                 nextBtn.appendChild(chevron);
-            }
-            nextBtn.disabled = pagesRight === 0;
-        }
-        
-        function animateChevrons(progress, fromPage, toPage, totalPages) {
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            
-            if (toPage > fromPage) {
-                // Swiping right: fade in left chevron, fade out right chevron
-                const leftChevrons = prevBtn.querySelectorAll('.chevron');
-                const rightChevrons = nextBtn.querySelectorAll('.chevron');
-                
-                if (leftChevrons[fromPage]) {
-                    leftChevrons[fromPage].style.opacity = progress.toString();
-                }
-                if (rightChevrons[rightChevrons.length - 1]) {
-                    rightChevrons[rightChevrons.length - 1].style.opacity = (1 - progress).toString();
-                }
-            } else {
-                // Swiping left: fade out left chevron, fade in right chevron
-                const leftChevrons = prevBtn.querySelectorAll('.chevron');
-                const rightChevrons = nextBtn.querySelectorAll('.chevron');
-                
-                if (leftChevrons[leftChevrons.length - 1]) {
-                    leftChevrons[leftChevrons.length - 1].style.opacity = (1 - progress).toString();
-                }
-                if (rightChevrons[fromPage - 1]) {
-                    rightChevrons[fromPage - 1].style.opacity = progress.toString();
-                }
             }
         }
         
@@ -993,7 +972,7 @@
             
             pageNav.style.display = 'flex';
             
-            // Create page name elements
+            // Create page name elements - visible by default
             const container = document.getElementById('pageNameContainer');
             container.innerHTML = '';
             pageNameElements = {};
@@ -1003,41 +982,39 @@
                 const el = document.createElement('div');
                 el.className = 'page-name';
                 el.textContent = pageName;
-                el.style.visibility = 'visible';
-                el.style.opacity = '0';
-                el.style.transform = 'translateX(-50%)';
+                // Start visible, add hidden class to non-current pages after measurement
+                if (index !== currentPage) {
+                    el.classList.add('hidden');
+                }
                 container.appendChild(el);
                 pageNameElements[index] = el;
             });
             
-            // Measure widths after DOM update, then after fonts load
-            const measureAndInit = () => {
-                config.pages.forEach((pageName, index) => {
-                    const el = pageNameElements[index];
-                    pageNameWidths[index] = el.offsetWidth || 120;
-                });
-                
-                config.pages.forEach((pageName, index) => {
-                    const el = pageNameElements[index];
-                    el.style.visibility = '';
-                    el.style.opacity = index === currentPage ? '1' : '0';
-                    el.style.transform = `translateX(${index === currentPage ? '-50%' : index > currentPage ? '50%' : '-150%'}%)`;
-                });
-                
-                updateChevrons(currentPage, config.pages.length);
-                updateArrowPositions(pageNameWidths[currentPage] || 120);
-            };
+            // Immediate measure (synchronous)
+            config.pages.forEach((pageName, index) => {
+                const el = pageNameElements[index];
+                pageNameWidths[index] = el.offsetWidth || 120;
+            });
             
-            requestAnimationFrame(measureAndInit);
+            // Update immediately
+            updateChevrons(currentPage, config.pages.length);
+            updateArrowPositions(pageNameWidths[currentPage] || 120);
             
+            // Re-measure after fonts if needed
             if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(measureAndInit);
+                document.fonts.ready.then(() => {
+                    config.pages.forEach((pageName, index) => {
+                        const el = pageNameElements[index];
+                        if (el) pageNameWidths[index] = el.offsetWidth || 120;
+                    });
+                    updateArrowPositions(pageNameWidths[currentPage] || 120);
+                });
             }
         }
         
         function updateArrowPositions(width) {
             const halfWidth = width / 2;
-            const gap = 8;
+            const gap = 5; // 4-6px gap
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             
@@ -1085,7 +1062,7 @@
                 if (carousel) {
                     carousel.scrollLeft = currentPage * carousel.offsetWidth;
                 }
-                updatePageButtons();
+                updateChevrons(currentPage, config.pages.length);
             }
         }
         
@@ -1096,24 +1073,31 @@
                 if (carousel) {
                     carousel.scrollLeft = currentPage * carousel.offsetWidth;
                 }
-                updatePageButtons();
+                updateChevrons(currentPage, tabConfig[currentTab].pages.length);
             }
         }
         
-        function updatePageButtons() {
-            const config = tabConfig[currentTab];
-            updateChevrons(currentPage, config.pages.length);
+        function animateChevrons(progress, fromPage, toPage, totalPages) {
+            // Simplified: just update based on progress without complex fading logic
+            // The main updateChevrons will handle the state when scroll completes
         }
         
         function setupCarousels() {
             document.querySelectorAll('.page-carousel').forEach(carousel => {
                 carousel.addEventListener('scroll', () => {
+                    // Only process scroll for the active tab's carousel
+                    const isActive = carousel.closest('.tab-content')?.classList.contains('active');
+                    if (!isActive) return;
+                    
                     if (animationFrameId) {
                         cancelAnimationFrame(animationFrameId);
                     }
                     
                     animationFrameId = requestAnimationFrame(() => {
+                        // Get width at scroll time (not at init) for accurate calculation
                         const pageWidth = carousel.offsetWidth;
+                        if (pageWidth === 0) return; // Skip if tab is hidden
+                        
                         const scrollLeft = carousel.scrollLeft;
                         const exactPage = scrollLeft / pageWidth;
                         const fromPage = Math.floor(exactPage);
@@ -1121,9 +1105,9 @@
                         const progress = exactPage - fromPage;
                         
                         const newPage = Math.round(exactPage);
-                        if (newPage !== currentPage) {
+                        if (newPage !== currentPage && newPage >= 0 && newPage < tabConfig[currentTab].pages.length) {
                             currentPage = newPage;
-                            updatePageButtons();
+                            updateChevrons(currentPage, tabConfig[currentTab].pages.length);
                         }
                         
                         if (fromPage !== toPage && fromPage >= 0 && toPage < tabConfig[currentTab].pages.length) {

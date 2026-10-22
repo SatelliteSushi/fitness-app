@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitness-cache-v1';
+const CACHE_NAME = 'fitness-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
