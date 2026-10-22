@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      
+      - name: Prepare deployment files
+        run: |
+          mkdir -p deploy
+          cp index.html manifest.json service-worker.js icon-*.png deploy/
+          
+          # Replace BUILD_TIMESTAMP with actual timestamp
+          BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          sed -i "s/BUILD_TIMESTAMP/$BUILD_TIME/g" deploy/index.html
+          
+          echo "Build timestamp: $BUILD_TIME"
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
