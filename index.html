@@ -117,6 +117,26 @@
             gap: var(--space-sm);
             font-size: var(--font-size-sm);
             color: var(--color-text-secondary);
+            position: relative;
+            min-width: 180px;
+            justify-content: center;
+        }
+        
+        .page-name-container {
+            position: relative;
+            height: 20px;
+            overflow: hidden;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .page-name {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            transition: none;
         }
         
         .page-nav-btn {
@@ -132,6 +152,7 @@
             align-items: center;
             justify-content: center;
             transition: color 0.2s ease;
+            will-change: transform;
         }
         
         .page-nav-btn:hover:not(:disabled) {
@@ -141,26 +162,6 @@
         .page-nav-btn:disabled {
             opacity: 0.3;
             cursor: not-allowed;
-        }
-        
-        .page-dots {
-            display: flex;
-            gap: 6px;
-            margin-left: var(--space-xs);
-        }
-        
-        .page-dot {
-            width: 6px;
-            height: 6px;
-            border: 1px solid var(--color-card-border);
-            background: transparent;
-            transition: all 0.2s ease;
-        }
-        
-        .page-dot.active {
-            background: var(--color-accent-cyan);
-            border-color: var(--color-accent-cyan);
-            box-shadow: 0 0 8px var(--color-glow);
         }
         
         /* Main Content */
@@ -556,11 +557,10 @@
                 <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
-                <span id="pageName">Today's Meals</span>
+                <div class="page-name-container" id="pageNameContainer"></div>
                 <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
-                <div class="page-dots" id="pageDots"></div>
             </div>
         </header>
         
@@ -831,6 +831,9 @@
         
         let currentTab = 'meal-plan';
         let currentPage = 0;
+        let pageNameElements = {};
+        let pageNameWidths = {};
+        let animationFrameId = null;
         
         function switchTab(tabName, event) {
             if (event) {
@@ -854,7 +857,6 @@
             
             updatePageNavigation();
             
-            // Use replaceState instead of hash to avoid history entries
             history.replaceState(null, '', '#' + tabName);
         }
         
@@ -869,20 +871,70 @@
             
             pageNav.style.display = 'flex';
             
-            document.getElementById('pageName').textContent = config.pages[currentPage] || '';
+            // Create page name elements and measure widths
+            const container = document.getElementById('pageNameContainer');
+            container.innerHTML = '';
+            pageNameElements = {};
+            pageNameWidths = {};
+            
+            config.pages.forEach((pageName, index) => {
+                const el = document.createElement('div');
+                el.className = 'page-name';
+                el.textContent = pageName;
+                el.style.opacity = index === currentPage ? '1' : '0';
+                el.style.transform = `translateX(${index === currentPage ? '-50%' : index > currentPage ? '50%' : '-150%'})`;
+                container.appendChild(el);
+                pageNameElements[index] = el;
+                
+                // Measure width
+                pageNameWidths[index] = el.offsetWidth;
+            });
             
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             prevBtn.disabled = currentPage === 0;
             nextBtn.disabled = currentPage === config.pages.length - 1;
             
-            const dotsContainer = document.getElementById('pageDots');
-            dotsContainer.innerHTML = '';
-            for (let i = 0; i < config.pages.length; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'page-dot' + (i === currentPage ? ' active' : '');
-                dotsContainer.appendChild(dot);
-            }
+            // Set initial arrow positions
+            updateArrowPositions(pageNameWidths[currentPage] || 0);
+        }
+        
+        function updateArrowPositions(width) {
+            const halfWidth = width / 2;
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            prevBtn.style.transform = `translateX(${-halfWidth - 12}px)`;
+            nextBtn.style.transform = `translateX(${halfWidth + 12}px)`;
+        }
+        
+        function animatePageTransition(progress, fromPage, toPage) {
+            if (!pageNameElements[fromPage] || !pageNameElements[toPage]) return;
+            
+            progress = Math.max(0, Math.min(1, progress));
+            
+            // Animate page names
+            const fromEl = pageNameElements[fromPage];
+            fromEl.style.opacity = (1 - progress).toString();
+            fromEl.style.transform = `translateX(${-50 + (toPage > fromPage ? -100 : 100) * progress}%)`;
+            
+            const toEl = pageNameElements[toPage];
+            toEl.style.opacity = progress.toString();
+            toEl.style.transform = `translateX(${(toPage > fromPage ? 50 : -150) + (toPage > fromPage ? -100 : 100) * progress}%)`;
+            
+            // Hide other pages
+            Object.keys(pageNameElements).forEach(key => {
+                const index = parseInt(key);
+                if (index !== fromPage && index !== toPage) {
+                    pageNameElements[index].style.opacity = '0';
+                }
+            });
+            
+            // Interpolate arrow spacing based on widths
+            const fromWidth = pageNameWidths[fromPage] || 0;
+            const toWidth = pageNameWidths[toPage] || 0;
+            const interpolatedWidth = fromWidth + (toWidth - fromWidth) * progress;
+            updateArrowPositions(interpolatedWidth);
         }
         
         function nextPage() {
@@ -891,7 +943,7 @@
                 currentPage++;
                 const carousel = document.querySelector(`#${currentTab} .page-carousel`);
                 carousel.scrollLeft = currentPage * carousel.offsetWidth;
-                updatePageNavigation();
+                updatePageButtons();
             }
         }
         
@@ -900,25 +952,44 @@
                 currentPage--;
                 const carousel = document.querySelector(`#${currentTab} .page-carousel`);
                 carousel.scrollLeft = currentPage * carousel.offsetWidth;
-                updatePageNavigation();
+                updatePageButtons();
             }
         }
         
-        // Setup scroll listeners for carousels
+        function updatePageButtons() {
+            const config = tabConfig[currentTab];
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage === config.pages.length - 1;
+        }
+        
+        // Setup scroll listeners for carousels with rAF
         function setupCarousels() {
             document.querySelectorAll('.page-carousel').forEach(carousel => {
-                let scrollTimeout;
-                
                 carousel.addEventListener('scroll', () => {
-                    clearTimeout(scrollTimeout);
-                    scrollTimeout = setTimeout(() => {
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    
+                    animationFrameId = requestAnimationFrame(() => {
                         const pageWidth = carousel.offsetWidth;
-                        const newPage = Math.round(carousel.scrollLeft / pageWidth);
+                        const scrollLeft = carousel.scrollLeft;
+                        const exactPage = scrollLeft / pageWidth;
+                        const fromPage = Math.floor(exactPage);
+                        const toPage = Math.ceil(exactPage);
+                        const progress = exactPage - fromPage;
+                        
+                        const newPage = Math.round(exactPage);
                         if (newPage !== currentPage) {
                             currentPage = newPage;
-                            updatePageNavigation();
+                            updatePageButtons();
                         }
-                    }, 100);
+                        
+                        if (fromPage !== toPage && fromPage >= 0 && toPage < tabConfig[currentTab].pages.length) {
+                            animatePageTransition(progress, fromPage, toPage);
+                        }
+                    });
                 }, { passive: true });
             });
         }
