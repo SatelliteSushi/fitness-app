@@ -134,15 +134,15 @@
             align-items: center;
             gap: 8px;
             white-space: nowrap;
-            transition: transform 0.3s ease;
+            will-change: transform;
         }
         
         .page-title-item {
             cursor: pointer;
             opacity: 0.35;
-            transition: opacity 0.1s ease;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            will-change: opacity;
         }
         
         .page-title-item.active {
@@ -755,10 +755,12 @@
             }
         };
         
-        let currentTab = 'meal-plan';
+        let currentTab = null; // Start as null so first switchTab always runs
         let currentPage = 0;
         let pageTitleElements = {};
+        let pageTitlePositions = {}; // Cache positions to avoid layout reads
         let animationFrameId = null;
+        let navCenterX = 0; // Cache nav center
         
         const tabIndexMap = {
             'meal-plan': 0,
@@ -801,9 +803,6 @@
                         // Force layout recalc
                         carousel.offsetWidth;
                         carousel.scrollLeft = 0;
-                        // Update page title opacities
-                        updatePageTitleOpacities(0, config.pages.length);
-                        centerFocusedTitle();
                     }
                 });
             });
@@ -830,6 +829,7 @@
             pageNav.style.display = 'flex';
             titlesRow.innerHTML = '';
             pageTitleElements = {};
+            pageTitlePositions = {};
             
             // Create all page titles with separators
             config.pages.forEach((pageName, index) => {
@@ -851,50 +851,69 @@
                 }
             });
             
-            // Force layout calculation before centering
-            titlesRow.offsetWidth;
-            
-            // Center the focused title - use multiple rAF to ensure layout is complete
+            // Cache positions and widths (one layout read batch)
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    centerFocusedTitle();
+                    navCenterX = pageNav.offsetWidth / 2;
+                    
+                    config.pages.forEach((pageName, index) => {
+                        const el = pageTitleElements[index];
+                        if (el) {
+                            pageTitlePositions[index] = {
+                                left: el.offsetLeft,
+                                width: el.offsetWidth,
+                                centerX: el.offsetLeft + el.offsetWidth / 2
+                            };
+                        }
+                    });
+                    
+                    // Initial centering
+                    updateTitlePositionAndOpacity(0, config.pages.length);
                 });
             });
         }
         
-        function centerFocusedTitle() {
+        function updateTitlePositionAndOpacity(exactPage, totalPages) {
             const titlesRow = document.getElementById('pageTitlesRow');
-            const pageNav = document.getElementById('pageNav');
+            if (!titlesRow) return;
             
-            if (!titlesRow || !pageNav) return;
+            const fromPage = Math.floor(exactPage);
+            const toPage = Math.ceil(exactPage);
+            const progress = exactPage - fromPage;
             
-            const rowWidth = titlesRow.scrollWidth;
-            const navWidth = pageNav.offsetWidth;
-            
-            // If row fits in nav, still center the focused title
-            if (rowWidth <= navWidth) {
-                // Center the focused title even when row is short
-                const focusedEl = pageTitleElements[currentPage];
-                if (!focusedEl) return;
+            // Update opacities based on exact page position
+            Object.keys(pageTitleElements).forEach(key => {
+                const index = parseInt(key);
+                const el = pageTitleElements[index];
                 
-                const focusedOffset = focusedEl.offsetLeft + focusedEl.offsetWidth / 2;
-                const navCenter = navWidth / 2;
-                const translateX = navCenter - focusedOffset;
+                let opacity;
+                if (index === fromPage && index === toPage) {
+                    // Exactly on a page
+                    opacity = 1;
+                } else if (index === fromPage) {
+                    // Transitioning away from this page
+                    opacity = 1 - (progress * 0.65);
+                } else if (index === toPage) {
+                    // Transitioning to this page
+                    opacity = 0.35 + (progress * 0.65);
+                } else {
+                    opacity = 0.35;
+                }
                 
-                titlesRow.style.transform = `translateX(${translateX}px)`;
-                return;
-            }
+                el.style.opacity = opacity.toString();
+            });
             
-            // Get the focused title element
-            const focusedEl = pageTitleElements[currentPage];
-            if (!focusedEl) return;
+            // Calculate centered position from cached positions
+            const fromPos = pageTitlePositions[fromPage];
+            const toPos = pageTitlePositions[toPage];
             
-            // Calculate offset needed to center the focused title
-            // ALWAYS center - no clamping, even for first/last pages
-            const focusedOffset = focusedEl.offsetLeft + focusedEl.offsetWidth / 2;
-            const navCenter = navWidth / 2;
-            const translateX = navCenter - focusedOffset;
+            if (!fromPos || !toPos) return;
             
+            // Interpolate center position
+            const currentCenterX = fromPos.centerX + (toPos.centerX - fromPos.centerX) * progress;
+            const translateX = navCenterX - currentCenterX;
+            
+            // Apply transform directly (no transition)
             titlesRow.style.transform = `translateX(${translateX}px)`;
         }
         
@@ -907,71 +926,9 @@
             if (carousel) {
                 carousel.scrollLeft = currentPage * carousel.offsetWidth;
             }
-            updatePageTitleOpacities(currentPage, config.pages.length, 1);
-            centerFocusedTitle();
+            // Position and opacity will update via scroll handler
         }
         
-        function updatePageTitleOpacities(focusedIndex, totalPages, progress = 1) {
-            // Update opacity for all titles
-            Object.keys(pageTitleElements).forEach(key => {
-                const index = parseInt(key);
-                const el = pageTitleElements[index];
-                if (index === focusedIndex) {
-                    el.style.opacity = '1';
-                    el.classList.add('active');
-                } else {
-                    el.style.opacity = '0.35';
-                    el.classList.remove('active');
-                }
-            });
-        }
-        
-        function interpolatePageTitleOpacities(fromPage, toPage, progress) {
-            // Smooth opacity interpolation during swipe
-            progress = Math.max(0, Math.min(1, progress));
-            
-            Object.keys(pageTitleElements).forEach(key => {
-                const index = parseInt(key);
-                const el = pageTitleElements[index];
-                
-                if (index === fromPage) {
-                    // Fade out from 1 to 0.35
-                    const opacity = 1 - (progress * 0.65);
-                    el.style.opacity = opacity.toString();
-                } else if (index === toPage) {
-                    // Fade in from 0.35 to 1
-                    const opacity = 0.35 + (progress * 0.65);
-                    el.style.opacity = opacity.toString();
-                } else {
-                    // Keep at 0.35
-                    el.style.opacity = '0.35';
-                }
-            });
-            
-            // Interpolate centering position - ALWAYS center, no clamping
-            const titlesRow = document.getElementById('pageTitlesRow');
-            const pageNav = document.getElementById('pageNav');
-            
-            if (!titlesRow || !pageNav) return;
-            
-            const navWidth = pageNav.offsetWidth;
-            
-            // Calculate positions for both pages
-            const fromEl = pageTitleElements[fromPage];
-            const toEl = pageTitleElements[toPage];
-            
-            if (!fromEl || !toEl) return;
-            
-            const fromOffset = fromEl.offsetLeft + fromEl.offsetWidth / 2;
-            const toOffset = toEl.offsetLeft + toEl.offsetWidth / 2;
-            const navCenter = navWidth / 2;
-            
-            // Interpolate between the two positions
-            const currentOffset = fromOffset + (toOffset - fromOffset) * progress;
-            const translateX = navCenter - currentOffset;
-            
-            titlesRow.style.transform = `translateX(${translateX}px)`;
-        }
         
         
         function setupCarousels() {
@@ -986,26 +943,22 @@
                     }
                     
                     animationFrameId = requestAnimationFrame(() => {
-                        // Get width at scroll time (not at init) for accurate calculation
+                        // Single layout read
                         const pageWidth = carousel.offsetWidth;
-                        if (pageWidth === 0) return; // Skip if tab is hidden
+                        if (pageWidth === 0) return;
                         
                         const scrollLeft = carousel.scrollLeft;
                         const exactPage = scrollLeft / pageWidth;
-                        const fromPage = Math.floor(exactPage);
-                        const toPage = Math.ceil(exactPage);
-                        const progress = exactPage - fromPage;
+                        const config = tabConfig[currentTab];
                         
+                        // Update current page when snapped
                         const newPage = Math.round(exactPage);
-                        if (newPage !== currentPage && newPage >= 0 && newPage < tabConfig[currentTab].pages.length) {
+                        if (newPage !== currentPage && newPage >= 0 && newPage < config.pages.length) {
                             currentPage = newPage;
-                            updatePageTitleOpacities(currentPage, tabConfig[currentTab].pages.length);
-                            centerFocusedTitle();
                         }
                         
-                        if (fromPage !== toPage && fromPage >= 0 && toPage < tabConfig[currentTab].pages.length) {
-                            interpolatePageTitleOpacities(fromPage, toPage, progress);
-                        }
+                        // Update position and opacity from exact scroll position (no transitions)
+                        updateTitlePositionAndOpacity(exactPage, config.pages.length);
                     });
                 }, { passive: true });
             });
@@ -1104,11 +1057,30 @@
             }
         }, 100);
         
-        // Re-measure on resize
+        // Re-cache positions on resize
         window.addEventListener('resize', () => {
-            if (tabConfig[currentTab].pages.length > 0) {
+            if (currentTab && tabConfig[currentTab].pages.length > 0) {
                 requestAnimationFrame(() => {
-                    centerFocusedTitle();
+                    const pageNav = document.getElementById('pageNav');
+                    const config = tabConfig[currentTab];
+                    
+                    if (pageNav) {
+                        navCenterX = pageNav.offsetWidth / 2;
+                        
+                        config.pages.forEach((pageName, index) => {
+                            const el = pageTitleElements[index];
+                            if (el) {
+                                pageTitlePositions[index] = {
+                                    left: el.offsetLeft,
+                                    width: el.offsetWidth,
+                                    centerX: el.offsetLeft + el.offsetWidth / 2
+                                };
+                            }
+                        });
+                        
+                        // Update position immediately
+                        updateTitlePositionAndOpacity(currentPage, config.pages.length);
+                    }
                 });
             }
         });

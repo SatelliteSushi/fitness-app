@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: test-debug.spec.js >> debug page initialization
-- Location: test-debug.spec.js:8:1
+- Name: test-cold-load.spec.js >> focused title is ALWAYS centered, even for first/last pages
+- Location: test-cold-load.spec.js:73:1
 
 # Error details
 
