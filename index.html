@@ -108,13 +108,26 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            padding-bottom: var(--space-xs);
+            position: relative;
+        }
+        
+        .app-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 217, 255, 0.2) 50%, transparent 100%);
         }
         
         /* Page Navigation */
         .page-nav {
             display: flex;
             align-items: center;
-            gap: var(--space-sm);
+            gap: 0;
             font-size: var(--font-size-sm);
             color: var(--color-text-secondary);
             position: relative;
@@ -144,15 +157,14 @@
             border: none;
             color: var(--color-text-secondary);
             cursor: pointer;
-            font-size: 18px;
             padding: 0;
-            width: 24px;
             height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: color 0.2s ease;
             will-change: transform;
+            position: relative;
         }
         
         .page-nav-btn:hover:not(:disabled) {
@@ -160,8 +172,22 @@
         }
         
         .page-nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .chevron {
+            width: 12px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+        }
+        
+        .chevron svg {
+            width: 100%;
+            height: 100%;
         }
         
         /* Main Content */
@@ -445,7 +471,26 @@
             justify-content: space-around;
             align-items: flex-start;
             padding-top: var(--space-xs);
+            position: relative;
         }
+        
+        .tab-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25%;
+            height: 2px;
+            background: var(--color-accent-cyan);
+            box-shadow: 0 0 8px var(--color-glow);
+            transition: transform 0.3s ease;
+            will-change: transform;
+        }
+        
+        .tab-bar[data-active="0"]::before { transform: translateX(0%); }
+        .tab-bar[data-active="1"]::before { transform: translateX(100%); }
+        .tab-bar[data-active="2"]::before { transform: translateX(200%); }
+        .tab-bar[data-active="3"]::before { transform: translateX(300%); }
         
         .tab {
             flex: 1;
@@ -554,13 +599,9 @@
         <header class="header">
             <h1 class="app-title" id="appTitle">MEAL PLAN</h1>
             <div class="page-nav">
-                <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
+                <button class="page-nav-btn" id="prevPageBtn" onclick="previousPage()"></button>
                 <div class="page-name-container" id="pageNameContainer"></div>
-                <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
+                <button class="page-nav-btn" id="nextPageBtn" onclick="nextPage()"></button>
             </div>
         </header>
         
@@ -835,6 +876,13 @@
         let pageNameWidths = {};
         let animationFrameId = null;
         
+        const tabIndexMap = {
+            'meal-plan': 0,
+            'workouts': 1,
+            'schedule': 2,
+            'settings': 3
+        };
+        
         function switchTab(tabName, event) {
             if (event) {
                 event.preventDefault();
@@ -852,12 +900,86 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
             
+            // Update tab bar indicator
+            const tabBar = document.querySelector('.tab-bar');
+            tabBar.setAttribute('data-active', tabIndexMap[tabName]);
+            
             const config = tabConfig[tabName];
             document.getElementById('appTitle').textContent = config.title;
             
             updatePageNavigation();
             
+            // Reset carousel scroll position
+            requestAnimationFrame(() => {
+                const carousel = document.querySelector(`#${tabName} .page-carousel`);
+                if (carousel) {
+                    carousel.scrollLeft = 0;
+                }
+            });
+            
             history.replaceState(null, '', '#' + tabName);
+        }
+        
+        function createChevronSVG(direction) {
+            const path = direction === 'left' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6';
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
+        }
+        
+        function updateChevrons(currentPageNum, totalPages) {
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            const pagesLeft = currentPageNum;
+            const pagesRight = totalPages - currentPageNum - 1;
+            
+            // Update left chevrons
+            prevBtn.innerHTML = '';
+            for (let i = 0; i < pagesLeft; i++) {
+                const chevron = document.createElement('div');
+                chevron.className = 'chevron';
+                chevron.innerHTML = createChevronSVG('left');
+                prevBtn.appendChild(chevron);
+            }
+            prevBtn.disabled = pagesLeft === 0;
+            
+            // Update right chevrons
+            nextBtn.innerHTML = '';
+            for (let i = 0; i < pagesRight; i++) {
+                const chevron = document.createElement('div');
+                chevron.className = 'chevron';
+                chevron.innerHTML = createChevronSVG('right');
+                nextBtn.appendChild(chevron);
+            }
+            nextBtn.disabled = pagesRight === 0;
+        }
+        
+        function animateChevrons(progress, fromPage, toPage, totalPages) {
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            if (toPage > fromPage) {
+                // Swiping right: fade in left chevron, fade out right chevron
+                const leftChevrons = prevBtn.querySelectorAll('.chevron');
+                const rightChevrons = nextBtn.querySelectorAll('.chevron');
+                
+                if (leftChevrons[fromPage]) {
+                    leftChevrons[fromPage].style.opacity = progress.toString();
+                }
+                if (rightChevrons[rightChevrons.length - 1]) {
+                    rightChevrons[rightChevrons.length - 1].style.opacity = (1 - progress).toString();
+                }
+            } else {
+                // Swiping left: fade out left chevron, fade in right chevron
+                const leftChevrons = prevBtn.querySelectorAll('.chevron');
+                const rightChevrons = nextBtn.querySelectorAll('.chevron');
+                
+                if (leftChevrons[leftChevrons.length - 1]) {
+                    leftChevrons[leftChevrons.length - 1].style.opacity = (1 - progress).toString();
+                }
+                if (rightChevrons[fromPage - 1]) {
+                    rightChevrons[fromPage - 1].style.opacity = progress.toString();
+                }
+            }
         }
         
         function updatePageNavigation() {
@@ -871,7 +993,7 @@
             
             pageNav.style.display = 'flex';
             
-            // Create page name elements and measure widths
+            // Create page name elements
             const container = document.getElementById('pageNameContainer');
             container.innerHTML = '';
             pageNameElements = {};
@@ -881,31 +1003,49 @@
                 const el = document.createElement('div');
                 el.className = 'page-name';
                 el.textContent = pageName;
-                el.style.opacity = index === currentPage ? '1' : '0';
-                el.style.transform = `translateX(${index === currentPage ? '-50%' : index > currentPage ? '50%' : '-150%'})`;
+                el.style.visibility = 'visible';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(-50%)';
                 container.appendChild(el);
                 pageNameElements[index] = el;
-                
-                // Measure width
-                pageNameWidths[index] = el.offsetWidth;
             });
             
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            prevBtn.disabled = currentPage === 0;
-            nextBtn.disabled = currentPage === config.pages.length - 1;
+            // Measure widths after DOM update, then after fonts load
+            const measureAndInit = () => {
+                config.pages.forEach((pageName, index) => {
+                    const el = pageNameElements[index];
+                    pageNameWidths[index] = el.offsetWidth || 120;
+                });
+                
+                config.pages.forEach((pageName, index) => {
+                    const el = pageNameElements[index];
+                    el.style.visibility = '';
+                    el.style.opacity = index === currentPage ? '1' : '0';
+                    el.style.transform = `translateX(${index === currentPage ? '-50%' : index > currentPage ? '50%' : '-150%'}%)`;
+                });
+                
+                updateChevrons(currentPage, config.pages.length);
+                updateArrowPositions(pageNameWidths[currentPage] || 120);
+            };
             
-            // Set initial arrow positions
-            updateArrowPositions(pageNameWidths[currentPage] || 0);
+            requestAnimationFrame(measureAndInit);
+            
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(measureAndInit);
+            }
         }
         
         function updateArrowPositions(width) {
             const halfWidth = width / 2;
+            const gap = 8;
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             
-            prevBtn.style.transform = `translateX(${-halfWidth - 12}px)`;
-            nextBtn.style.transform = `translateX(${halfWidth + 12}px)`;
+            const prevWidth = prevBtn.offsetWidth || 12;
+            const nextWidth = nextBtn.offsetWidth || 12;
+            
+            prevBtn.style.transform = `translateX(${-halfWidth - gap - prevWidth}px)`;
+            nextBtn.style.transform = `translateX(${halfWidth + gap}px)`;
         }
         
         function animatePageTransition(progress, fromPage, toPage) {
@@ -913,7 +1053,6 @@
             
             progress = Math.max(0, Math.min(1, progress));
             
-            // Animate page names
             const fromEl = pageNameElements[fromPage];
             fromEl.style.opacity = (1 - progress).toString();
             fromEl.style.transform = `translateX(${-50 + (toPage > fromPage ? -100 : 100) * progress}%)`;
@@ -922,7 +1061,6 @@
             toEl.style.opacity = progress.toString();
             toEl.style.transform = `translateX(${(toPage > fromPage ? 50 : -150) + (toPage > fromPage ? -100 : 100) * progress}%)`;
             
-            // Hide other pages
             Object.keys(pageNameElements).forEach(key => {
                 const index = parseInt(key);
                 if (index !== fromPage && index !== toPage) {
@@ -930,11 +1068,13 @@
                 }
             });
             
-            // Interpolate arrow spacing based on widths
-            const fromWidth = pageNameWidths[fromPage] || 0;
-            const toWidth = pageNameWidths[toPage] || 0;
+            const fromWidth = pageNameWidths[fromPage] || 120;
+            const toWidth = pageNameWidths[toPage] || 120;
             const interpolatedWidth = fromWidth + (toWidth - fromWidth) * progress;
             updateArrowPositions(interpolatedWidth);
+            
+            const totalPages = tabConfig[currentTab].pages.length;
+            animateChevrons(progress, fromPage, toPage, totalPages);
         }
         
         function nextPage() {
@@ -942,7 +1082,9 @@
             if (currentPage < config.pages.length - 1) {
                 currentPage++;
                 const carousel = document.querySelector(`#${currentTab} .page-carousel`);
-                carousel.scrollLeft = currentPage * carousel.offsetWidth;
+                if (carousel) {
+                    carousel.scrollLeft = currentPage * carousel.offsetWidth;
+                }
                 updatePageButtons();
             }
         }
@@ -951,20 +1093,18 @@
             if (currentPage > 0) {
                 currentPage--;
                 const carousel = document.querySelector(`#${currentTab} .page-carousel`);
-                carousel.scrollLeft = currentPage * carousel.offsetWidth;
+                if (carousel) {
+                    carousel.scrollLeft = currentPage * carousel.offsetWidth;
+                }
                 updatePageButtons();
             }
         }
         
         function updatePageButtons() {
             const config = tabConfig[currentTab];
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            prevBtn.disabled = currentPage === 0;
-            nextBtn.disabled = currentPage === config.pages.length - 1;
+            updateChevrons(currentPage, config.pages.length);
         }
         
-        // Setup scroll listeners for carousels with rAF
         function setupCarousels() {
             document.querySelectorAll('.page-carousel').forEach(carousel => {
                 carousel.addEventListener('scroll', () => {
@@ -1050,9 +1190,28 @@
         
         window.addEventListener('load', () => {
             const hash = window.location.hash.slice(1) || 'meal-plan';
+            
+            // Initialize tab bar indicator
+            const tabBar = document.querySelector('.tab-bar');
+            tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+            
             switchTab(hash);
             setupCarousels();
             loadCustomIcons();
+        });
+        
+        // Re-measure on resize
+        window.addEventListener('resize', () => {
+            if (tabConfig[currentTab].pages.length > 0) {
+                requestAnimationFrame(() => {
+                    Object.keys(pageNameElements).forEach(key => {
+                        const index = parseInt(key);
+                        const el = pageNameElements[index];
+                        pageNameWidths[index] = el.offsetWidth || 120;
+                    });
+                    updateArrowPositions(pageNameWidths[currentPage] || 120);
+                });
+            }
         });
         
         // Service worker
