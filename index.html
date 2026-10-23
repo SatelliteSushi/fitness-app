@@ -56,6 +56,13 @@
             box-sizing: border-box;
         }
         
+        /* Form elements - prevent overflow */
+        input, textarea, select {
+            box-sizing: border-box;
+            min-width: 0; /* Allow flex/grid shrinking */
+            max-width: 100%;
+        }
+        
         html {
             background: var(--color-bg-dark);
             overscroll-behavior: none;
@@ -432,7 +439,12 @@
             justify-content: space-around;
             align-items: flex-start;
             padding-top: var(--space-xs);
-            position: relative;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .tab-bar.hidden {
+            transform: translateY(100%);
         }
         
         .tab-bar::before {
@@ -780,6 +792,46 @@
             50% { transform: scale(1.1); }
             100% { transform: scale(1); opacity: 1; }
         }
+        
+        /* Master Timer Bar (replaces tab bar during workout) */
+        .master-timer-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: var(--color-bg-dark);
+            border-top: 2px solid var(--color-accent-cyan);
+            z-index: 1001;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+        }
+        
+        .master-timer-bar.active {
+            display: flex;
+        }
+        
+        .master-timer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .master-timer-time {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-accent-cyan);
+        }
+        
+        .master-timer-label {
+            font-size: 11px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -1017,6 +1069,18 @@
             <div class="session-content" id="sessionContent"></div>
         </div>
         
+        <!-- Workout Editor Overlay -->
+        <div class="workout-session" id="workoutEditor">
+            <div class="session-header">
+                <div class="session-back" onclick="closeWorkoutEditor()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </div>
+                <div class="session-title">Edit Workout</div>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="session-content" id="workoutEditorContent" style="padding: 20px;"></div>
+        </div>
+        
         <!-- Tab Bar -->
         <nav class="tab-bar">
             <a href="javascript:void(0)" class="tab" data-tab="meal-plan" data-title="MEAL PLAN" onclick="switchTab('meal-plan', event)">
@@ -1044,6 +1108,15 @@
                 <span class="tab-label">Settings</span>
             </a>
         </nav>
+        
+        <!-- Master Timer Bar (shows during workout, replaces tab bar) -->
+        <div class="master-timer-bar" id="masterTimerBar">
+            <div class="master-timer-info">
+                <div class="master-timer-time" id="masterTimerTime">00:00</div>
+                <div class="master-timer-label">Total Remaining</div>
+            </div>
+            <button class="session-btn" onclick="toggleWorkoutPause()" id="masterPauseBtn">Pause</button>
+        </div>
     </div>
     
     <script>
@@ -1151,6 +1224,10 @@
         function deleteWorkout(id) {
             const workouts = getWorkouts().filter(w => w.id !== id);
             localStorage.setItem('fitness_workouts', JSON.stringify(workouts));
+            // Clear today's workout if it was deleted
+            if (getTodaysWorkout() === id) {
+                localStorage.removeItem('fitness_todays_workout');
+            }
         }
         
         // Today's workout selection
@@ -1160,6 +1237,78 @@
         
         function setTodaysWorkout(workoutId) {
             localStorage.setItem('fitness_todays_workout', workoutId);
+        }
+        
+        // Calculate workout stats (block count, estimated duration)
+        function calculateWorkoutStats(workout) {
+            const blocks = workout.blocks || [];
+            const blockCount = blocks.length;
+            
+            let totalTime = 0;
+            blocks.forEach(block => {
+                const rounds = block.rounds || 1;
+                const items = block.items || [];
+                const itemCount = items.length;
+                
+                items.forEach(item => {
+                    totalTime += (item.duration || 30) * rounds; // Default 30s per item if no duration
+                });
+                
+                // Add rest between sets within block
+                const restsInBlock = (itemCount * rounds - 1);
+                totalTime += restsInBlock * (workout.restBetweenSets || 60);
+            });
+            
+            // Add rest between blocks
+            if (blockCount > 1) {
+                totalTime += (blockCount - 1) * (workout.restBetweenBlocks || 120);
+            }
+            
+            return {
+                blockCount,
+                estimatedDuration: Math.ceil(totalTime / 60) // in minutes
+            };
+        }
+        
+        // Migrate old workout format to new block-based format
+        function migrateWorkoutsToBlocks() {
+            if (localStorage.getItem('fitness_workout_migration_blocks')) return;
+            
+            const workouts = getWorkouts();
+            let migrated = false;
+            
+            workouts.forEach(workout => {
+                // Check if this workout uses old format (has exercises array instead of blocks)
+                if (workout.exercises && !workout.blocks) {
+                    migrated = true;
+                    console.log(`Migrating workout: ${workout.name}`);
+                    
+                    // Convert exercises to a single block with all items
+                    const items = workout.exercises.map(ex => ({
+                        exercise: ex.name,
+                        reps: ex.reps || null,
+                        duration: null // Old format didn't have duration
+                    }));
+                    
+                    workout.blocks = [{
+                        name: null,
+                        rounds: workout.exercises[0]?.sets || 1,
+                        items: items
+                    }];
+                    
+                    // Set rest periods from first exercise or defaults
+                    workout.restBetweenSets = workout.exercises[0]?.rest || 60;
+                    workout.restBetweenBlocks = 120;
+                    
+                    // Remove old fields
+                    delete workout.exercises;
+                    
+                    saveWorkout(workout);
+                }
+            });
+            
+            localStorage.setItem('fitness_workout_migration_blocks', 'true');
+            if (migrated) console.log('Workout migration to blocks complete');
         }
         
         // Seed data on first run
@@ -1173,14 +1322,29 @@
                 saveRecipe(recipe);
             });
             
-            // Seed sample workout
+            // Seed sample workout with new block format
             const sampleWorkout = {
                 name: 'Sample Push Day',
                 isSample: true,
-                exercises: [
-                    { name: 'Bench Press', sets: 4, reps: 8, weight: 185, rest: 120 },
-                    { name: 'Overhead Press', sets: 3, reps: 10, weight: 95, rest: 90 },
-                    { name: 'Tricep Dips', sets: 3, reps: 12, rest: 60 }
+                restBetweenSets: 90,
+                restBetweenBlocks: 120,
+                blocks: [
+                    {
+                        name: 'Compound Lifts',
+                        rounds: 4,
+                        items: [
+                            { exercise: 'Bench Press', reps: 8, duration: null },
+                            { exercise: 'Overhead Press', reps: 10, duration: null }
+                        ]
+                    },
+                    {
+                        name: 'Accessories',
+                        rounds: 3,
+                        items: [
+                            { exercise: 'Tricep Dips', reps: 12, duration: null },
+                            { exercise: 'Lateral Raises', reps: 15, duration: null }
+                        ]
+                    }
                 ]
             };
             saveWorkout(sampleWorkout);
@@ -1494,49 +1658,87 @@
         
         let sessionState = {
             workout: null,
-            currentExerciseIndex: 0,
-            currentSet: 0,
+            sequence: [], // Expanded sequence of all items and rests
+            currentIndex: 0,
             isPaused: false,
-            isResting: false,
             timerInterval: null,
-            elapsed: 0,
-            restRemaining: 0,
-            startTime: null,
-            completedSets: 0,
-            totalVolume: 0
+            remaining: 0, // Current item countdown
+            totalRemaining: 0 // Total workout countdown
         };
         
         function startWorkoutSession(workoutId) {
             const workout = getWorkouts().find(w => w.id === workoutId);
-            if (!workout || !workout.exercises || workout.exercises.length === 0) return;
+            if (!workout || !workout.blocks || workout.blocks.length === 0) return;
+            
+            // Expand blocks into sequence
+            const sequence = [];
+            workout.blocks.forEach((block, blockIdx) => {
+                for (let round = 1; round <= (block.rounds || 1); round++) {
+                    block.items.forEach((item, itemIdx) => {
+                        sequence.push({
+                            type: 'item',
+                            blockName: block.name || `Block ${blockIdx + 1}`,
+                            blockIdx,
+                            round,
+                            totalRounds: block.rounds,
+                            exercise: item.exercise,
+                            reps: item.reps,
+                            duration: item.duration || 30
+                        });
+                        
+                        // Add rest after item (except last item of last round of last block)
+                        const isLastItemOfRound = itemIdx === block.items.length - 1;
+                        const isLastRound = round === block.rounds;
+                        const isLastBlock = blockIdx === workout.blocks.length - 1;
+                        
+                        if (!isLastItemOfRound || !isLastRound || !isLastBlock) {
+                            const restDuration = (isLastItemOfRound && !isLastRound) || (isLastRound && !isLastBlock) 
+                                ? (isLastBlock ? workout.restBetweenSets : workout.restBetweenBlocks)
+                                : workout.restBetweenSets;
+                            
+                            sequence.push({
+                                type: 'rest',
+                                duration: restDuration || 60
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Calculate total time
+            const totalTime = sequence.reduce((sum, item) => sum + item.duration, 0);
             
             sessionState = {
                 workout,
-                currentExerciseIndex: 0,
-                currentSet: 1,
+                sequence,
+                currentIndex: 0,
                 isPaused: false,
-                isResting: false,
                 timerInterval: null,
-                elapsed: 0,
-                restRemaining: 0,
-                startTime: Date.now(),
-                completedSets: 0,
-                totalVolume: 0
+                remaining: sequence[0]?.duration || 0,
+                totalRemaining: totalTime
             };
             
             document.getElementById('workoutSession').classList.add('active');
             document.getElementById('sessionTitle').textContent = workout.name;
+            
+            // Hide tab bar, show master timer
+            document.querySelector('.tab-bar').classList.add('hidden');
+            document.getElementById('masterTimerBar').classList.add('active');
+            
             renderWorkoutSession();
-            startTimer();
+            startSessionTimer();
             vibrate(50);
         }
         
         function exitWorkoutSession() {
-            if (sessionState.currentSet > 1 || sessionState.completedSets > 0) {
+            if (sessionState.currentIndex > 0) {
                 if (!confirm('Exit workout? Progress will be lost.')) return;
             }
             
             document.getElementById('workoutSession').classList.remove('active');
+            document.querySelector('.tab-bar').classList.remove('hidden');
+            document.getElementById('masterTimerBar').classList.remove('active');
+            
             if (sessionState.timerInterval) {
                 clearInterval(sessionState.timerInterval);
             }
@@ -1545,195 +1747,158 @@
         
         function renderWorkoutSession() {
             const content = document.getElementById('sessionContent');
-            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            const current = sessionState.sequence[sessionState.currentIndex];
             
-            if (!ex) {
+            if (!current) {
                 renderFinishScreen();
                 return;
             }
             
-            const totalSets = sessionState.workout.exercises.reduce((sum, e) => sum + (e.sets || 0), 0);
+            const cards = sessionState.sequence.map((item, idx) => {
+                const isActive = idx === sessionState.currentIndex;
+                const isCompleted = idx < sessionState.currentIndex;
+                const isUpcoming = idx > sessionState.currentIndex;
+                
+                if (item.type === 'item') {
+                    return `
+                        <div class="card" style="
+                            margin-bottom: 12px;
+                            opacity: ${isCompleted ? 0.4 : isUpcoming ? 0.6 : 1};
+                            ${isActive ? 'border-color: var(--color-accent-cyan); box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);' : ''}
+                            transition: all 0.3s ease;
+                        ">
+                            <div class="card-header">
+                                <h2 class="card-title" style="font-size: 16px;">${item.exercise}</h2>
+                                <span class="card-badge">${item.blockName} R${item.round}/${item.totalRounds}</span>
+                            </div>
+                            <div class="card-content">
+                                ${item.reps ? `<p style="opacity: 0.7;">Target: ${item.reps} reps</p>` : ''}
+                                ${isActive ? `
+                                    <div style="font-size: 32px; font-weight: 600; color: var(--color-accent-cyan); text-align: center; padding: 20px 0;">
+                                        ${formatTime(sessionState.remaining)}
+                                    </div>
+                                    ${!item.reps ? '<button class="session-btn session-btn-primary" onclick="completeCurrentItem()" style="width: 100%;">Complete</button>' : 
+                                        '<button class="session-btn session-btn-primary" onclick="completeCurrentItem()" style="width: 100%;">Done (${item.reps} reps)</button>'}
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="card" style="
+                            margin-bottom: 12px;
+                            opacity: ${isCompleted ? 0.4 : isUpcoming ? 0.6 : 1};
+                            background: var(--color-bg-navy);
+                            ${isActive ? 'border-color: var(--color-accent-cyan);' : ''}
+                            transition: all 0.3s ease;
+                        ">
+                            <div class="card-content">
+                                <p style="text-align: center; opacity: 0.7; margin-bottom: 8px;">Rest Period</p>
+                                ${isActive ? `
+                                    <div style="font-size: 32px; font-weight: 600; color: var(--color-accent-cyan); text-align: center; padding: 20px 0;">
+                                        ${formatTime(sessionState.remaining)}
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                                        <button class="rest-btn" onclick="adjustCurrentRest(-10)">-10s</button>
+                                        <button class="session-btn" onclick="skipCurrentItem()" style="flex: 1;">Skip Rest</button>
+                                        <button class="rest-btn" onclick="adjustCurrentRest(10)">+10s</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
             
-            content.innerHTML = `
-                <div class="session-exercise">
-                    <div class="session-exercise-name">${ex.name}</div>
-                    <div class="session-set-info">
-                        Set ${sessionState.currentSet} of ${ex.sets}
-                        ${ex.reps ? ` • ${ex.reps} reps` : ''}
-                        ${ex.weight ? ` • ${ex.weight} lbs` : ''}
-                    </div>
-                </div>
-                
-                <div class="session-timer">
-                    <div class="timer-display" id="timerDisplay">00:00</div>
-                    <div class="timer-label">${sessionState.isResting ? 'Rest Time' : 'Work Time'}</div>
-                </div>
-                
-                ${sessionState.isResting ? `
-                    <div class="rest-ring">
-                        <svg width="200" height="200">
-                            <circle class="rest-ring-bg" cx="100" cy="100" r="90" fill="none" stroke-width="8"/>
-                            <circle class="rest-ring-progress" id="restRing" cx="100" cy="100" r="90" fill="none" stroke-width="8"
-                                stroke-dasharray="565" stroke-dashoffset="0"/>
-                        </svg>
-                    </div>
-                    <div class="rest-adjuster">
-                        <button class="rest-btn" onclick="adjustRest(-5)">-</button>
-                        <div class="rest-value">${ex.rest || 60}s</div>
-                        <button class="rest-btn" onclick="adjustRest(5)">+</button>
-                    </div>
-                ` : ''}
-                
-                <div class="session-controls">
-                    ${sessionState.isResting ? `
-                        <button class="session-btn session-btn-primary" onclick="skipRest()">Skip Rest</button>
-                    ` : `
-                        <button class="session-btn ${sessionState.isPaused ? 'session-btn-primary' : ''}" onclick="togglePause()">
-                            ${sessionState.isPaused ? 'Resume' : 'Pause'}
-                        </button>
-                        <button class="session-btn session-btn-primary" onclick="completeSet()">Complete Set</button>
-                    `}
-                </div>
-                
-                <div class="progress-track">
-                    <div class="progress-path" id="progressPath"></div>
-                </div>
-            `;
+            content.innerHTML = `<div style="padding: 20px;">${cards}</div>`;
             
-            renderProgressTrack();
-            if (sessionState.isResting) {
-                startRestTimer();
+            // Scroll active card into view
+            setTimeout(() => {
+                const activeCard = content.querySelector('.card[style*="box-shadow"]');
+                if (activeCard) {
+                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+        
+        function startSessionTimer() {
+            sessionState.timerInterval = setInterval(() => {
+                if (sessionState.isPaused) return;
+                
+                sessionState.remaining--;
+                sessionState.totalRemaining--;
+                
+                updateMasterTimer();
+                
+                // Update active card countdown
+                const content = document.getElementById('sessionContent');
+                const activeCountdown = content.querySelector('.card div[style*="font-size: 32px"]');
+                if (activeCountdown) {
+                    activeCountdown.textContent = formatTime(sessionState.remaining);
+                }
+                
+                // Auto-advance when countdown hits 0
+                if (sessionState.remaining <= 0) {
+                    const current = sessionState.sequence[sessionState.currentIndex];
+                    if (current.type === 'rest' || !current.reps) {
+                        completeCurrentItem();
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateMasterTimer() {
+            const timeEl = document.getElementById('masterTimerTime');
+            if (timeEl) {
+                timeEl.textContent = formatTime(sessionState.totalRemaining);
             }
         }
         
-        function renderProgressTrack() {
-            const path = document.getElementById('progressPath');
-            if (!path) return;
-            
-            let html = '';
-            let setIndex = 0;
-            
-            sessionState.workout.exercises.forEach((ex, exIdx) => {
-                for (let i = 0; i < ex.sets; i++) {
-                    const isCompleted = setIndex < sessionState.completedSets;
-                    const isCurrent = setIndex === sessionState.completedSets;
-                    
-                    html += `<div class="progress-node ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}">${setIndex + 1}</div>`;
-                    
-                    if (setIndex < sessionState.workout.exercises.reduce((sum, e) => sum + e.sets, 0) - 1) {
-                        html += `<div class="progress-line ${isCompleted ? 'completed' : ''}"></div>`;
-                    }
-                    
-                    setIndex++;
-                }
-            });
-            
-            path.innerHTML = html;
-        }
-        
-        function startTimer() {
-            sessionState.timerInterval = setInterval(() => {
-                if (!sessionState.isPaused && !sessionState.isResting) {
-                    sessionState.elapsed++;
-                    updateTimerDisplay(sessionState.elapsed);
-                }
-            }, 1000);
-        }
-        
-        function startRestTimer() {
-            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
-            sessionState.restRemaining = ex.rest || 60;
-            
-            const restInterval = setInterval(() => {
-                if (sessionState.restRemaining > 0) {
-                    sessionState.restRemaining--;
-                    updateTimerDisplay(sessionState.restRemaining);
-                    updateRestRing();
-                    
-                    if (sessionState.restRemaining === 0) {
-                        clearInterval(restInterval);
-                        vibrate(100);
-                        advanceToNextSet();
-                    }
-                } else {
-                    clearInterval(restInterval);
-                }
-            }, 1000);
-        }
-        
-        function updateTimerDisplay(seconds) {
-            const display = document.getElementById('timerDisplay');
-            if (!display) return;
-            
+        function formatTime(seconds) {
+            if (seconds <= 0) return '00:00';
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
-            display.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
         
-        function updateRestRing() {
-            const ring = document.getElementById('restRing');
-            if (!ring) return;
+        function completeCurrentItem() {
+            vibrate(50);
+            sessionState.currentIndex++;
             
-            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
-            const totalRest = ex.rest || 60;
-            const progress = sessionState.restRemaining / totalRest;
-            const circumference = 565;
-            const offset = circumference * (1 - progress);
-            
-            ring.style.strokeDashoffset = offset;
-        }
-        
-        function togglePause() {
-            sessionState.isPaused = !sessionState.isPaused;
-            renderWorkoutSession();
-            vibrate(30);
-        }
-        
-        function completeSet() {
-            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
-            sessionState.completedSets++;
-            sessionState.totalVolume += (ex.reps || 0) * (ex.weight || 0);
-            
-            vibrate([50, 50, 50]);
-            
-            if (sessionState.currentSet < ex.sets) {
-                sessionState.currentSet++;
-                sessionState.isResting = true;
-                renderWorkoutSession();
+            if (sessionState.currentIndex >= sessionState.sequence.length) {
+                renderFinishScreen();
             } else {
-                sessionState.currentExerciseIndex++;
-                sessionState.currentSet = 1;
-                
-                if (sessionState.currentExerciseIndex >= sessionState.workout.exercises.length) {
-                    renderFinishScreen();
-                } else {
-                    vibrate([100, 50, 100]);
-                    sessionState.isResting = true;
-                    renderWorkoutSession();
-                }
+                sessionState.remaining = sessionState.sequence[sessionState.currentIndex].duration;
+                renderWorkoutSession();
             }
         }
         
-        function skipRest() {
-            sessionState.restRemaining = 0;
-            advanceToNextSet();
+        function skipCurrentItem() {
+            completeCurrentItem();
+        }
+        
+        function adjustCurrentRest(delta) {
+            const current = sessionState.sequence[sessionState.currentIndex];
+            if (current.type !== 'rest') return;
+            
+            current.duration = Math.max(5, current.duration + delta);
+            sessionState.remaining = Math.max(1, sessionState.remaining + delta);
+            sessionState.totalRemaining += delta;
+            
+            // Update master rest values
+            if (delta > 0) {
+                sessionState.workout.restBetweenSets += delta;
+                sessionState.workout.restBetweenBlocks += delta;
+            }
+            
+            renderWorkoutSession();
+            updateMasterTimer();
             vibrate(30);
         }
         
-        function advanceToNextSet() {
-            sessionState.isResting = false;
-            renderWorkoutSession();
-        }
-        
-        function adjustRest(delta) {
-            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
-            ex.rest = Math.max(5, (ex.rest || 60) + delta);
-            
-            // Persist to workout
-            saveWorkout(sessionState.workout);
-            
-            sessionState.restRemaining = Math.max(0, sessionState.restRemaining + delta);
-            renderWorkoutSession();
+        function toggleWorkoutPause() {
+            sessionState.isPaused = !sessionState.isPaused;
+            document.getElementById('masterPauseBtn').textContent = sessionState.isPaused ? 'Resume' : 'Pause';
             vibrate(30);
         }
         
@@ -1742,7 +1907,10 @@
                 clearInterval(sessionState.timerInterval);
             }
             
-            const totalTime = Math.floor((Date.now() - sessionState.startTime) / 1000);
+            document.querySelector('.tab-bar').classList.remove('hidden');
+            document.getElementById('masterTimerBar').classList.remove('active');
+            
+            const completedItems = sessionState.sequence.filter(s => s.type === 'item').length;
             const content = document.getElementById('sessionContent');
             
             content.innerHTML = `
@@ -1750,27 +1918,19 @@
                     <div class="finish-title">Workout Complete!</div>
                     <div class="finish-stats">
                         <div class="finish-stat">
-                            <div class="finish-stat-label">Total Time</div>
-                            <div class="finish-stat-value">${Math.floor(totalTime / 60)}:${String(totalTime % 60).padStart(2, '0')}</div>
+                            <div class="finish-stat-label">Items Completed</div>
+                            <div class="finish-stat-value">${completedItems}</div>
                         </div>
                         <div class="finish-stat">
-                            <div class="finish-stat-label">Sets Completed</div>
-                            <div class="finish-stat-value">${sessionState.completedSets}</div>
-                        </div>
-                        <div class="finish-stat">
-                            <div class="finish-stat-label">Total Volume</div>
-                            <div class="finish-stat-value">${Math.round(sessionState.totalVolume)}</div>
-                        </div>
-                        <div class="finish-stat">
-                            <div class="finish-stat-label">Exercises</div>
-                            <div class="finish-stat-value">${sessionState.workout.exercises.length}</div>
+                            <div class="finish-stat-label">Blocks</div>
+                            <div class="finish-stat-value">${sessionState.workout.blocks?.length || 0}</div>
                         </div>
                     </div>
-                    <button class="session-btn session-btn-primary" style="margin-top: 32px;" onclick="exitWorkoutSession()">Done</button>
+                    <button class="session-btn session-btn-primary" onclick="exitWorkoutSession()" style="margin-top: 32px; width: 200px;">Done</button>
                 </div>
             `;
             
-            vibrate([200, 100, 200, 100, 200]);
+            vibrate([100, 100, 100, 100, 100]);
         }
         
         function vibrate(pattern) {
@@ -1933,140 +2093,269 @@
             renderMealBuilder();
         }
         
-        // ===== WORKOUT BUILDER FORM =====
+        // ===== WORKOUT BUILDER & LIST =====
         
         let editingWorkoutId = null;
+        let expandedWorkoutId = null;
         
-        function renderWorkoutBuilder() {
+        function renderWorkoutsPage() {
             const workoutsPage = document.querySelector('#workouts .page-carousel .page:nth-child(2) .content');
             if (!workoutsPage) return;
             
-            const workout = editingWorkoutId ? getWorkouts().find(w => w.id === editingWorkoutId) : null;
             const workouts = getWorkouts();
             
             workoutsPage.innerHTML = `
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">${workout ? 'Edit' : 'Create'} Workout</h2>
-                    </div>
-                    <div class="card-content">
-                        <input type="text" id="workoutName" placeholder="Workout Name" value="${workout?.name || ''}" 
-                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
-                        
-                        <div style="margin: 16px 0;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <strong>Exercises</strong>
-                                <button class="rest-btn" onclick="addExerciseRow()">+</button>
-                            </div>
-                            <div id="exercisesList"></div>
-                        </div>
-                        
-                        <button class="session-btn session-btn-primary" style="width: 100%; margin-top: 16px;" onclick="saveWorkoutBuilder()">Save Workout</button>
-                        ${workout ? '<button class="session-btn" style="width: 100%; margin-top: 8px;" onclick="cancelEditWorkout()">Cancel</button>' : ''}
-                    </div>
-                </div>
+                <button class="session-btn session-btn-primary" style="width: 100%; margin-bottom: 16px;" onclick="openWorkoutEditor(null)">
+                    <span style="margin-right: 8px;">+</span> New Workout
+                </button>
                 
-                ${workouts.map(w => `
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">${w.name}</h2>
-                            ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
-                        </div>
-                        <div class="card-content">
-                            <p style="opacity: 0.7; margin-bottom: 12px;">${w.exercises?.length || 0} exercises</p>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="session-btn" style="flex: 1;" onclick="editWorkout('${w.id}')">Edit</button>
-                                <button class="session-btn" style="flex: 1;" onclick="if(confirm('Delete ${w.name}?')) { deleteWorkout('${w.id}'); renderWorkoutBuilder(); renderWorkoutsContent(); }">Delete</button>
-                                <button class="session-btn session-btn-primary" style="flex: 1;" onclick="setTodaysWorkout('${w.id}'); renderWorkoutsContent(); alert('Set as today\\'s workout!');">Select for Today</button>
+                ${workouts.length === 0 ? '<div class="card"><p style="opacity: 0.6;">No workouts yet.</p></div>' : ''}
+                
+                ${workouts.map(w => {
+                    const stats = calculateWorkoutStats(w);
+                    const isExpanded = expandedWorkoutId === w.id;
+                    
+                    return `
+                        <div class="card" style="margin-bottom: 12px;">
+                            <div style="cursor: pointer;" onclick="toggleWorkoutExpand('${w.id}')">
+                                <div class="card-header">
+                                    <h2 class="card-title">${w.name}</h2>
+                                    ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
+                                </div>
+                                <div class="card-content">
+                                    <div style="display: flex; justify-content: space-between; opacity: 0.7; margin-bottom: ${isExpanded ? '12px' : '0'};">
+                                        <span>${stats.blockCount} block${stats.blockCount !== 1 ? 's' : ''}</span>
+                                        <span>~${stats.estimatedDuration} min</span>
+                                    </div>
+                                </div>
                             </div>
+                            
+                            ${isExpanded ? `
+                                <div class="card-content" style="border-top: 1px solid rgba(139, 155, 176, 0.1); padding-top: 12px; margin-top: 0;">
+                                    ${(w.blocks || []).map((block, blockIdx) => `
+                                        <div style="margin-bottom: 16px; padding: 12px; background: var(--color-bg-navy); border-left: 2px solid var(--color-accent-cyan);">
+                                            <div style="font-weight: 500; margin-bottom: 8px;">
+                                                ${block.name || `Block ${blockIdx + 1}`} <span style="opacity: 0.6;">(${block.rounds} round${block.rounds !== 1 ? 's' : ''})</span>
+                                            </div>
+                                            ${(block.items || []).map(item => `
+                                                <div style="opacity: 0.7; font-size: 14px; margin-bottom: 4px; padding-left: 8px;">
+                                                    • ${item.exercise}${item.reps ? ` × ${item.reps}` : ''}${item.duration ? ` (${item.duration}s)` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    `).join('')}
+                                    
+                                    <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+                                        <button class="rest-btn" onclick="event.stopPropagation(); openWorkoutMenu('${w.id}')" title="More options">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                                            </svg>
+                                        </button>
+                                        <button class="session-btn session-btn-primary" style="flex: 1;" onclick="event.stopPropagation(); setTodaysWorkout('${w.id}'); renderWorkoutsContent(); alert('Set as today\\'s workout!');">
+                                            Select for Today
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             `;
+        }
+        
+        function toggleWorkoutExpand(id) {
+            expandedWorkoutId = expandedWorkoutId === id ? null : id;
+            renderWorkoutsPage();
+        }
+        
+        function openWorkoutMenu(id) {
+            const workout = getWorkouts().find(w => w.id === id);
+            if (!workout) return;
             
-            // Populate exercises
-            if (workout?.exercises) {
-                workout.exercises.forEach(ex => addExerciseRow(ex));
-            } else {
-                addExerciseRow();
+            const choice = prompt(`${workout.name}\n\n1. Edit workout\n2. Delete workout\n3. Set as today's workout\n\nEnter choice (1-3):`, '1');
+            
+            if (choice === '1') {
+                openWorkoutEditor(id);
+            } else if (choice === '2') {
+                if (confirm(`Delete ${workout.name}?`)) {
+                    deleteWorkout(id);
+                    renderWorkoutsPage();
+                    renderWorkoutsContent();
+                }
+            } else if (choice === '3') {
+                setTodaysWorkout(id);
+                renderWorkoutsContent();
+                alert(`Set as today's workout!`);
             }
         }
         
-        function addExerciseRow(exercise = null) {
-            const list = document.getElementById('exercisesList');
-            if (!list) return;
+        function openWorkoutEditor(id) {
+            // Store editor state
+            editingWorkoutId = id;
             
-            const row = document.createElement('div');
-            row.style.cssText = 'background: var(--color-bg-navy); border: 1px solid var(--color-card-border); padding: 12px; margin-bottom: 12px;';
-            row.innerHTML = `
-                <input type="text" placeholder="Exercise Name" value="${exercise?.name || ''}" class="ex-name"
-                    style="width: 100%; padding: 8px; margin-bottom: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                    <input type="number" placeholder="Sets" value="${exercise?.sets || ''}" class="ex-sets"
-                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
-                    <input type="number" placeholder="Reps" value="${exercise?.reps || ''}" class="ex-reps"
-                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
-                    <input type="number" placeholder="Weight" value="${exercise?.weight || ''}" class="ex-weight"
-                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
-                    <input type="number" placeholder="Rest (s)" value="${exercise?.rest || 60}" class="ex-rest"
-                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
-                </div>
-                <button class="rest-btn" onclick="this.parentElement.remove()" style="width: 100%;">Remove Exercise</button>
-            `;
-            
-            list.appendChild(row);
+            // Show editor overlay (will create below)
+            document.getElementById('workoutEditor').classList.add('active');
+            renderWorkoutEditor();
         }
         
-        function saveWorkoutBuilder() {
-            const name = document.getElementById('workoutName').value.trim();
+        function closeWorkoutEditor() {
+            editingWorkoutId = null;
+            document.getElementById('workoutEditor').classList.remove('active');
+            renderWorkoutsPage();
+            renderWorkoutsContent();
+        }
+        
+        function renderWorkoutEditor() {
+            const editor = document.getElementById('workoutEditorContent');
+            if (!editor) return;
+            
+            const workout = editingWorkoutId ? getWorkouts().find(w => w.id === editingWorkoutId) : null;
+            const blocks = workout?.blocks || [{ name: null, rounds: 3, items: [{ exercise: '', reps: null, duration: null }] }];
+            const restBetweenSets = workout?.restBetweenSets || 60;
+            const restBetweenBlocks = workout?.restBetweenBlocks || 120;
+            
+            editor.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Workout Name</label>
+                    <input type="text" id="editorWorkoutName" placeholder="Workout Name" value="${workout?.name || ''}" 
+                        style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Rest Between Sets (s)</label>
+                        <input type="number" id="editorRestSets" value="${restBetweenSets}" min="0"
+                            style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Rest Between Blocks (s)</label>
+                        <input type="number" id="editorRestBlocks" value="${restBetweenBlocks}" min="0"
+                            style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong>Blocks</strong>
+                        <button class="rest-btn" onclick="addEditorBlock()">+ Add Block</button>
+                    </div>
+                    <div id="editorBlocksList"></div>
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button class="session-btn" style="flex: 1;" onclick="closeWorkoutEditor()">Cancel</button>
+                    <button class="session-btn session-btn-primary" style="flex: 1;" onclick="saveWorkoutEditor()">Save Workout</button>
+                </div>
+            `;
+            
+            // Render blocks
+            blocks.forEach((block, idx) => addEditorBlock(block, idx));
+        }
+        
+        function addEditorBlock(block = null, index = null) {
+            const list = document.getElementById('editorBlocksList');
+            if (!list) return;
+            
+            const blockDiv = document.createElement('div');
+            blockDiv.className = 'editor-block';
+            blockDiv.style.cssText = 'background: var(--color-bg-navy); border: 1px solid var(--color-card-border); padding: 12px; margin-bottom: 12px; border-radius: 4px;';
+            
+            const blockData = block || { name: null, rounds: 3, items: [{ exercise: '', reps: null, duration: null }] };
+            
+            blockDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 12px; align-items: center;">
+                    <input type="text" placeholder="Block name (optional)" value="${blockData.name || ''}" class="block-name"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <input type="number" placeholder="Rounds" value="${blockData.rounds}" min="1" class="block-rounds"
+                        style="width: 80px; padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <button class="rest-btn" onclick="this.closest('.editor-block').remove()" title="Remove block">×</button>
+                </div>
+                <div class="block-items-list" style="margin-bottom: 8px;"></div>
+                <button class="rest-btn" onclick="addEditorItem(this.closest('.editor-block'))" style="width: 100%; font-size: 13px;">+ Add Exercise</button>
+            `;
+            
+            if (index !== null) {
+                list.appendChild(blockDiv);
+            } else {
+                list.appendChild(blockDiv);
+            }
+            
+            // Add items
+            const itemsList = blockDiv.querySelector('.block-items-list');
+            blockData.items.forEach(item => addEditorItem(blockDiv, item));
+        }
+        
+        function addEditorItem(blockDiv, item = null) {
+            const itemsList = blockDiv.querySelector('.block-items-list');
+            if (!itemsList) return;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'background: var(--color-bg-dark); padding: 8px; margin-bottom: 8px; border-radius: 4px;';
+            
+            const itemData = item || { exercise: '', reps: null, duration: null };
+            
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="Exercise name" value="${itemData.exercise || ''}" class="item-exercise"
+                    style="width: 100%; padding: 8px; margin-bottom: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;">
+                    <input type="number" placeholder="Reps" value="${itemData.reps || ''}" class="item-reps"
+                        style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <input type="number" placeholder="Duration (s)" value="${itemData.duration || ''}" class="item-duration"
+                        style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <button class="rest-btn" onclick="this.closest('div').closest('div').remove()" title="Remove">×</button>
+                </div>
+            `;
+            
+            itemsList.appendChild(itemDiv);
+        }
+        
+        function saveWorkoutEditor() {
+            const name = document.getElementById('editorWorkoutName').value.trim();
             if (!name) {
                 alert('Workout name is required');
                 return;
             }
             
-            const exercises = [];
-            document.querySelectorAll('#exercisesList > div').forEach(row => {
-                const exName = row.querySelector('.ex-name')?.value.trim();
-                const sets = parseInt(row.querySelector('.ex-sets')?.value) || 0;
-                const reps = parseInt(row.querySelector('.ex-reps')?.value) || 0;
-                const weight = parseFloat(row.querySelector('.ex-weight')?.value) || 0;
-                const rest = parseInt(row.querySelector('.ex-rest')?.value) || 60;
+            const restBetweenSets = parseInt(document.getElementById('editorRestSets').value) || 60;
+            const restBetweenBlocks = parseInt(document.getElementById('editorRestBlocks').value) || 120;
+            
+            const blocks = [];
+            document.querySelectorAll('.editor-block').forEach(blockDiv => {
+                const blockName = blockDiv.querySelector('.block-name').value.trim() || null;
+                const rounds = parseInt(blockDiv.querySelector('.block-rounds').value) || 1;
                 
-                if (exName && sets > 0) {
-                    const ex = { name: exName, sets, reps, rest };
-                    if (weight) ex.weight = weight;
-                    exercises.push(ex);
+                const items = [];
+                blockDiv.querySelectorAll('.block-items-list > div').forEach(itemDiv => {
+                    const exercise = itemDiv.querySelector('.item-exercise').value.trim();
+                    const reps = parseInt(itemDiv.querySelector('.item-reps').value) || null;
+                    const duration = parseInt(itemDiv.querySelector('.item-duration').value) || null;
+                    
+                    if (exercise) {
+                        items.push({ exercise, reps, duration });
+                    }
+                });
+                
+                if (items.length > 0) {
+                    blocks.push({ name: blockName, rounds, items });
                 }
             });
             
-            if (exercises.length === 0) {
-                alert('Add at least one exercise');
+            if (blocks.length === 0) {
+                alert('Add at least one block with exercises');
                 return;
             }
             
             const workout = {
                 id: editingWorkoutId,
                 name,
-                exercises
+                restBetweenSets,
+                restBetweenBlocks,
+                blocks
             };
             
             saveWorkout(workout);
-            editingWorkoutId = null;
-            renderWorkoutBuilder();
-            renderWorkoutsContent();
+            closeWorkoutEditor();
             alert('Workout saved!');
-        }
-        
-        function editWorkout(id) {
-            editingWorkoutId = id;
-            renderWorkoutBuilder();
-            // Scroll to top of page
-            document.querySelector('#workouts .page-carousel').scrollTop = 0;
-        }
-        
-        function cancelEditWorkout() {
-            editingWorkoutId = null;
-            renderWorkoutBuilder();
         }
         
         // ===== RENDER FUNCTIONS =====
@@ -2213,23 +2502,38 @@
             if (todayWorkoutPage) {
                 const todayId = getTodaysWorkout();
                 const workout = todayId ? getWorkouts().find(w => w.id === todayId) : null;
-                todayWorkoutPage.innerHTML = workout ? `
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">${workout.name}</h2>
-                        </div>
-                        <div class="card-content">
-                            <p style="opacity: 0.7; margin-bottom: 16px;">${workout.exercises?.length || 0} exercises</p>
-                            ${workout.exercises ? workout.exercises.map(ex => `
-                                <div style="margin-bottom: 8px; padding: 8px; border-left: 2px solid var(--color-accent-cyan); padding-left: 12px;">
-                                    <div style="font-weight: 500;">${ex.name}</div>
-                                    <div style="opacity: 0.6; font-size: 13px;">${ex.sets} × ${ex.reps}${ex.weight ? ` @ ${ex.weight} lbs` : ''}</div>
+                
+                if (workout) {
+                    const stats = calculateWorkoutStats(workout);
+                    todayWorkoutPage.innerHTML = `
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">${workout.name}</h2>
+                            </div>
+                            <div class="card-content">
+                                <div style="display: flex; justify-content: space-between; opacity: 0.7; margin-bottom: 16px;">
+                                    <span>${stats.blockCount} block${stats.blockCount !== 1 ? 's' : ''}</span>
+                                    <span>~${stats.estimatedDuration} min</span>
                                 </div>
-                            `).join('') : ''}
-                            <button class="session-btn session-btn-primary" style="margin-top: 16px; width: 100%;" onclick="startWorkoutSession('${workout.id}')">START</button>
+                                ${(workout.blocks || []).map((block, blockIdx) => `
+                                    <div style="margin-bottom: 12px; padding: 12px; background: var(--color-bg-navy); border-left: 2px solid var(--color-accent-cyan);">
+                                        <div style="font-weight: 500; margin-bottom: 8px;">
+                                            ${block.name || `Block ${blockIdx + 1}`} <span style="opacity: 0.6;">(${block.rounds} round${block.rounds !== 1 ? 's' : ''})</span>
+                                        </div>
+                                        ${(block.items || []).map(item => `
+                                            <div style="opacity: 0.7; font-size: 14px; margin-bottom: 4px; padding-left: 8px;">
+                                                • ${item.exercise}${item.reps ? ` × ${item.reps}` : ''}${item.duration ? ` (${item.duration}s)` : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `).join('')}
+                                <button class="session-btn session-btn-primary" style="margin-top: 16px; width: 100%;" onclick="startWorkoutSession('${workout.id}')">START</button>
+                            </div>
                         </div>
-                    </div>
-                ` : '<div class="card"><p style="opacity: 0.6;">No workout selected for today. Go to Workouts page to select one.</p></div>';
+                    `;
+                } else {
+                    todayWorkoutPage.innerHTML = '<div class="card"><p style="opacity: 0.6;">No workout selected for today. Go to Workouts page to select one.</p></div>';
+                }
             }
         }
         
@@ -2243,6 +2547,9 @@
             // Run macro migration (one-time fix for any cached incorrect values)
             migrateSeedRecipeMacros();
             
+            // Run workout migration to block format
+            migrateWorkoutsToBlocks();
+            
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
             // Initialize tab bar indicator
@@ -2254,7 +2561,7 @@
             // Render dynamic content
             renderMealBuilder();
             renderMealPlanContent();
-            renderWorkoutBuilder();
+            renderWorkoutsPage();
             renderWorkoutsContent();
             
             switchTab(hash);
