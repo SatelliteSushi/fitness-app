@@ -1744,6 +1744,160 @@
             }
         }
         
+        // ===== MEAL BUILDER FORM =====
+        
+        let editingRecipeId = null;
+        
+        function renderMealBuilder() {
+            const builderPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(2) .content');
+            if (!builderPage) return;
+            
+            const recipe = editingRecipeId ? getRecipes().find(r => r.id === editingRecipeId) : null;
+            
+            builderPage.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${recipe ? 'Edit' : 'Create'} Recipe</h2>
+                    </div>
+                    <div class="card-content">
+                        <input type="text" id="recipeName" placeholder="Recipe Name" value="${recipe?.name || ''}" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                        
+                        <input type="number" id="recipeServings" placeholder="Servings" value="${recipe?.servings || 1}" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                        
+                        <textarea id="recipeNote" placeholder="Note (optional)" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; min-height: 60px;">${recipe?.note || ''}</textarea>
+                        
+                        <div style="margin: 16px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong>Ingredients</strong>
+                                <button class="rest-btn" onclick="addIngredientRow()">+</button>
+                            </div>
+                            <div id="ingredientsList"></div>
+                        </div>
+                        
+                        <div style="margin: 16px 0;">
+                            <strong>Steps</strong>
+                            <textarea id="recipeSteps" placeholder="Enter each step on a new line" 
+                                style="width: 100%; padding: 12px; margin-top: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; min-height: 120px;">${recipe?.steps?.join('\\n') || ''}</textarea>
+                        </div>
+                        
+                        <div style="margin: 16px 0;">
+                            <strong>Macros per Serving (Estimated)</strong>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                                <input type="number" id="macroKcal" placeholder="Calories" value="${recipe?.macros_per_serving?.kcal || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroProtein" placeholder="Protein (g)" value="${recipe?.macros_per_serving?.protein_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroCarbs" placeholder="Carbs (g)" value="${recipe?.macros_per_serving?.carbs_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroFat" placeholder="Fat (g)" value="${recipe?.macros_per_serving?.fat_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                            </div>
+                        </div>
+                        
+                        <button class="session-btn session-btn-primary" style="width: 100%; margin-top: 16px;" onclick="saveMealBuilderRecipe()">Save Recipe</button>
+                        ${recipe ? '<button class="session-btn" style="width: 100%; margin-top: 8px;" onclick="cancelEditRecipe()">Cancel</button>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Populate ingredients
+            if (recipe?.ingredients) {
+                recipe.ingredients.forEach(ing => addIngredientRow(ing));
+            } else {
+                addIngredientRow();
+            }
+        }
+        
+        function addIngredientRow(ingredient = null) {
+            const list = document.getElementById('ingredientsList');
+            if (!list) return;
+            
+            const row = document.createElement('div');
+            row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 4px; margin-bottom: 4px;';
+            row.innerHTML = `
+                <input type="text" placeholder="Item" value="${ingredient?.item || ''}" class="ing-item"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <input type="number" step="0.01" placeholder="Amount" value="${ingredient?.amount || ''}" class="ing-amount"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <input type="text" placeholder="Unit" value="${ingredient?.unit || ''}" class="ing-unit"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <button class="rest-btn" onclick="this.parentElement.remove()" style="width: 40px;">×</button>
+            `;
+            
+            if (ingredient?.note) {
+                const noteRow = document.createElement('div');
+                noteRow.style.cssText = 'grid-column: 1 / -1; margin-bottom: 8px;';
+                noteRow.innerHTML = `
+                    <input type="text" placeholder="Note (optional)" value="${ingredient.note}" class="ing-note"
+                        style="width: 100%; padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 13px; opacity: 0.7;">
+                `;
+                row.appendChild(noteRow);
+            }
+            
+            list.appendChild(row);
+        }
+        
+        function saveMealBuilderRecipe() {
+            const name = document.getElementById('recipeName').value.trim();
+            if (!name) {
+                alert('Recipe name is required');
+                return;
+            }
+            
+            const ingredients = [];
+            document.querySelectorAll('#ingredientsList > div').forEach(row => {
+                const item = row.querySelector('.ing-item')?.value.trim();
+                const amount = parseFloat(row.querySelector('.ing-amount')?.value) || 0;
+                const unit = row.querySelector('.ing-unit')?.value.trim();
+                const note = row.querySelector('.ing-note')?.value.trim();
+                
+                if (item) {
+                    const ing = { item, amount, unit };
+                    if (note) ing.note = note;
+                    ingredients.push(ing);
+                }
+            });
+            
+            const steps = document.getElementById('recipeSteps').value.split('\\n').map(s => s.trim()).filter(s => s);
+            
+            const recipe = {
+                id: editingRecipeId,
+                name,
+                servings: parseInt(document.getElementById('recipeServings').value) || 1,
+                note: document.getElementById('recipeNote').value.trim(),
+                ingredients,
+                steps,
+                macros_per_serving: {
+                    kcal: parseInt(document.getElementById('macroKcal').value) || 0,
+                    protein_g: parseInt(document.getElementById('macroProtein').value) || 0,
+                    carbs_g: parseInt(document.getElementById('macroCarbs').value) || 0,
+                    fat_g: parseInt(document.getElementById('macroFat').value) || 0
+                },
+                tags: []
+            };
+            
+            saveRecipe(recipe);
+            editingRecipeId = null;
+            renderMealBuilder();
+            renderMealPlanContent();
+            alert('Recipe saved!');
+        }
+        
+        function editRecipe(id) {
+            editingRecipeId = id;
+            // Switch to Meal Builder page
+            jumpToPage(1); // Page 1 is Meal Builder
+            renderMealBuilder();
+        }
+        
+        function cancelEditRecipe() {
+            editingRecipeId = null;
+            renderMealBuilder();
+        }
+        
         // ===== RENDER FUNCTIONS =====
         
         function renderMealPlanContent() {
@@ -1864,12 +2018,6 @@
             }
         }
         
-        function editRecipe(id) {
-            // Navigate to Meal Builder with recipe loaded
-            alert('Edit recipe: Load recipe data into Meal Builder form (to be implemented in next feature)');
-            // Will be fully implemented in Feature #4
-        }
-        
         function scheduleRecipeDialog(recipeId) {
             const recipe = getRecipes().find(r => r.id === recipeId);
             if (!recipe) return;
@@ -1950,6 +2098,7 @@
             }
             
             // Render dynamic content
+            renderMealBuilder();
             renderMealPlanContent();
             renderWorkoutsContent();
             
