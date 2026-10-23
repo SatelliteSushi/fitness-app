@@ -1898,6 +1898,142 @@
             renderMealBuilder();
         }
         
+        // ===== WORKOUT BUILDER FORM =====
+        
+        let editingWorkoutId = null;
+        
+        function renderWorkoutBuilder() {
+            const workoutsPage = document.querySelector('#workouts .page-carousel .page:nth-child(2) .content');
+            if (!workoutsPage) return;
+            
+            const workout = editingWorkoutId ? getWorkouts().find(w => w.id === editingWorkoutId) : null;
+            const workouts = getWorkouts();
+            
+            workoutsPage.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${workout ? 'Edit' : 'Create'} Workout</h2>
+                    </div>
+                    <div class="card-content">
+                        <input type="text" id="workoutName" placeholder="Workout Name" value="${workout?.name || ''}" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                        
+                        <div style="margin: 16px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong>Exercises</strong>
+                                <button class="rest-btn" onclick="addExerciseRow()">+</button>
+                            </div>
+                            <div id="exercisesList"></div>
+                        </div>
+                        
+                        <button class="session-btn session-btn-primary" style="width: 100%; margin-top: 16px;" onclick="saveWorkoutBuilder()">Save Workout</button>
+                        ${workout ? '<button class="session-btn" style="width: 100%; margin-top: 8px;" onclick="cancelEditWorkout()">Cancel</button>' : ''}
+                    </div>
+                </div>
+                
+                ${workouts.map(w => `
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">${w.name}</h2>
+                            ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
+                        </div>
+                        <div class="card-content">
+                            <p style="opacity: 0.7; margin-bottom: 12px;">${w.exercises?.length || 0} exercises</p>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="session-btn" style="flex: 1;" onclick="editWorkout('${w.id}')">Edit</button>
+                                <button class="session-btn" style="flex: 1;" onclick="if(confirm('Delete ${w.name}?')) { deleteWorkout('${w.id}'); renderWorkoutBuilder(); renderWorkoutsContent(); }">Delete</button>
+                                <button class="session-btn session-btn-primary" style="flex: 1;" onclick="setTodaysWorkout('${w.id}'); renderWorkoutsContent(); alert('Set as today\\'s workout!');">Select for Today</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            // Populate exercises
+            if (workout?.exercises) {
+                workout.exercises.forEach(ex => addExerciseRow(ex));
+            } else {
+                addExerciseRow();
+            }
+        }
+        
+        function addExerciseRow(exercise = null) {
+            const list = document.getElementById('exercisesList');
+            if (!list) return;
+            
+            const row = document.createElement('div');
+            row.style.cssText = 'background: var(--color-bg-navy); border: 1px solid var(--color-card-border); padding: 12px; margin-bottom: 12px;';
+            row.innerHTML = `
+                <input type="text" placeholder="Exercise Name" value="${exercise?.name || ''}" class="ex-name"
+                    style="width: 100%; padding: 8px; margin-bottom: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <input type="number" placeholder="Sets" value="${exercise?.sets || ''}" class="ex-sets"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                    <input type="number" placeholder="Reps" value="${exercise?.reps || ''}" class="ex-reps"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                    <input type="number" placeholder="Weight" value="${exercise?.weight || ''}" class="ex-weight"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                    <input type="number" placeholder="Rest (s)" value="${exercise?.rest || 60}" class="ex-rest"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                </div>
+                <button class="rest-btn" onclick="this.parentElement.remove()" style="width: 100%;">Remove Exercise</button>
+            `;
+            
+            list.appendChild(row);
+        }
+        
+        function saveWorkoutBuilder() {
+            const name = document.getElementById('workoutName').value.trim();
+            if (!name) {
+                alert('Workout name is required');
+                return;
+            }
+            
+            const exercises = [];
+            document.querySelectorAll('#exercisesList > div').forEach(row => {
+                const exName = row.querySelector('.ex-name')?.value.trim();
+                const sets = parseInt(row.querySelector('.ex-sets')?.value) || 0;
+                const reps = parseInt(row.querySelector('.ex-reps')?.value) || 0;
+                const weight = parseFloat(row.querySelector('.ex-weight')?.value) || 0;
+                const rest = parseInt(row.querySelector('.ex-rest')?.value) || 60;
+                
+                if (exName && sets > 0) {
+                    const ex = { name: exName, sets, reps, rest };
+                    if (weight) ex.weight = weight;
+                    exercises.push(ex);
+                }
+            });
+            
+            if (exercises.length === 0) {
+                alert('Add at least one exercise');
+                return;
+            }
+            
+            const workout = {
+                id: editingWorkoutId,
+                name,
+                exercises
+            };
+            
+            saveWorkout(workout);
+            editingWorkoutId = null;
+            renderWorkoutBuilder();
+            renderWorkoutsContent();
+            alert('Workout saved!');
+        }
+        
+        function editWorkout(id) {
+            editingWorkoutId = id;
+            renderWorkoutBuilder();
+            // Scroll to top of page
+            document.querySelector('#workouts .page-carousel').scrollTop = 0;
+        }
+        
+        function cancelEditWorkout() {
+            editingWorkoutId = null;
+            renderWorkoutBuilder();
+        }
+        
         // ===== RENDER FUNCTIONS =====
         
         function renderMealPlanContent() {
@@ -2100,6 +2236,7 @@
             // Render dynamic content
             renderMealBuilder();
             renderMealPlanContent();
+            renderWorkoutBuilder();
             renderWorkoutsContent();
             
             switchTab(hash);
