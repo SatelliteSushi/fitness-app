@@ -1747,7 +1747,7 @@
         // ===== RENDER FUNCTIONS =====
         
         function renderMealPlanContent() {
-            // My Meals page (page 2)
+            // My Meals page (page 2) with edit/delete/schedule
             const myMealsPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(3) .content');
             if (myMealsPage) {
                 const recipes = getRecipes();
@@ -1768,6 +1768,11 @@
                                 <div class="card-metric">
                                     <span class="metric-label">Estimated Protein</span>
                                     <span class="metric-value">${r.macros_per_serving?.protein_g || '?'}g</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <button class="session-btn" style="flex: 1;" onclick="editRecipe('${r.id}')">Edit</button>
+                                    <button class="session-btn" style="flex: 1;" onclick="if(confirm('Delete ${r.name}?')) { deleteRecipe('${r.id}'); renderMealPlanContent(); }">Delete</button>
+                                    <button class="session-btn session-btn-primary" style="flex: 1;" onclick="scheduleRecipeDialog('${r.id}')">Schedule</button>
                                 </div>
                             </div>
                         </div>
@@ -1856,6 +1861,30 @@
                 ` : '';
                 
                 todayPage.innerHTML = macroTotalsCard + (mealCards || '<div class="card"><p style="opacity: 0.6;">No meals scheduled for today.</p></div>');
+            }
+        }
+        
+        function editRecipe(id) {
+            // Navigate to Meal Builder with recipe loaded
+            alert('Edit recipe: Load recipe data into Meal Builder form (to be implemented in next feature)');
+            // Will be fully implemented in Feature #4
+        }
+        
+        function scheduleRecipeDialog(recipeId) {
+            const recipe = getRecipes().find(r => r.id === recipeId);
+            if (!recipe) return;
+            
+            const days = prompt('Enter days (0=Sun, 1=Mon, etc., comma-separated):', '1,2,3,4,5');
+            if (!days) return;
+            
+            const slot = prompt('Enter meal slot (Meal 1, Meal 2, Meal 3, Shake, or custom time):', 'Meal 1');
+            if (!slot) return;
+            
+            const dayList = days.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+            if (dayList.length > 0) {
+                scheduleRecipe(recipeId, dayList, slot);
+                alert(`Scheduled ${recipe.name} for ${dayList.length} day(s)`);
+                renderMealPlanContent();
             }
         }
         
