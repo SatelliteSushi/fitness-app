@@ -1188,6 +1188,41 @@
             localStorage.setItem('fitness_seeded', 'true');
         }
         
+        // One-time migration: fix macros for seed recipes (in case any installs have incorrect cached values)
+        function migrateSeedRecipeMacros() {
+            if (localStorage.getItem('fitness_macro_migration_v1')) return;
+            
+            const recipes = getRecipes();
+            let updated = false;
+            
+            recipes.forEach(recipe => {
+                // Update Egg Casserole macros if servings match (6) and name matches
+                if (recipe.name === 'Egg Casserole' && recipe.servings === 6) {
+                    const correctMacros = { kcal: 720, protein_g: 48, carbs_g: 43, fat_g: 41 };
+                    if (JSON.stringify(recipe.macros_per_serving) !== JSON.stringify(correctMacros)) {
+                        recipe.macros_per_serving = correctMacros;
+                        saveRecipe(recipe);
+                        updated = true;
+                        console.log('Migrated Egg Casserole macros to correct values');
+                    }
+                }
+                
+                // Update Buffalo Tuna Quesadilla macros if servings match (1) and name matches
+                if (recipe.name === 'Buffalo Tuna Quesadilla' && recipe.servings === 1) {
+                    const correctMacros = { kcal: 650, protein_g: 47, carbs_g: 52, fat_g: 30 };
+                    if (JSON.stringify(recipe.macros_per_serving) !== JSON.stringify(correctMacros)) {
+                        recipe.macros_per_serving = correctMacros;
+                        saveRecipe(recipe);
+                        updated = true;
+                        console.log('Migrated Buffalo Tuna Quesadilla macros to correct values');
+                    }
+                }
+            });
+            
+            localStorage.setItem('fitness_macro_migration_v1', 'true');
+            if (updated) console.log('Macro migration complete');
+        }
+        
         let currentTab = null; // Start as null so first switchTab always runs
         let currentPage = 0;
         let pageTitleElements = {};
@@ -2204,6 +2239,9 @@
             
             // Seed data on first run
             seedData();
+            
+            // Run macro migration (one-time fix for any cached incorrect values)
+            migrateSeedRecipeMacros();
             
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
