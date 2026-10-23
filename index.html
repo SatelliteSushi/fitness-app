@@ -1979,40 +1979,6 @@
                 }
             }, 100);
         }
-                            margin-bottom: 12px;
-                            opacity: ${isCompleted ? 0.4 : isUpcoming ? 0.6 : 1};
-                            background: var(--color-bg-navy);
-                            ${isActive ? 'border-color: var(--color-accent-cyan);' : ''}
-                            transition: all 0.3s ease;
-                        ">
-                            <div class="card-content">
-                                <p style="text-align: center; opacity: 0.7; margin-bottom: 8px;">Rest Period</p>
-                                ${isActive ? `
-                                    <div style="font-size: 32px; font-weight: 600; color: var(--color-accent-cyan); text-align: center; padding: 20px 0;">
-                                        ${formatTime(sessionState.remaining)}
-                                    </div>
-                                    <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
-                                        <button class="rest-btn" onclick="adjustCurrentRest(-10)">-10s</button>
-                                        <button class="session-btn" onclick="skipCurrentItem()" style="flex: 1;">Skip Rest</button>
-                                        <button class="rest-btn" onclick="adjustCurrentRest(10)">+10s</button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
-            }).join('');
-            
-            content.innerHTML = `<div style="padding: 20px;">${cards}</div>`;
-            
-            // Scroll active card into view
-            setTimeout(() => {
-                const activeCard = content.querySelector('.card[style*="box-shadow"]');
-                if (activeCard) {
-                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 100);
-        }
         
         function startSessionTimer() {
             sessionState.timerInterval = setInterval(() => {
@@ -2871,32 +2837,80 @@
         function initApp() {
             console.log('initApp called');
             
-            // Seed data on first run
-            seedData();
+            // Wrap each init step to prevent one failure from breaking everything
+            try {
+                seedData();
+            } catch (e) {
+                console.error('Seed data failed:', e);
+            }
             
-            // Run macro migration (one-time fix for any cached incorrect values)
-            migrateSeedRecipeMacros();
+            try {
+                migrateSeedRecipeMacros();
+            } catch (e) {
+                console.error('Recipe macro migration failed:', e);
+            }
             
-            // Run workout migration to block format
-            migrateWorkoutsToBlocks();
+            try {
+                migrateWorkoutsToBlocks();
+            } catch (e) {
+                console.error('Workout migration failed:', e);
+            }
             
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
-            // Initialize tab bar indicator
-            const tabBar = document.querySelector('.tab-bar');
-            if (tabBar) {
-                tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+            // Initialize tab bar indicator (critical - must work)
+            try {
+                const tabBar = document.querySelector('.tab-bar');
+                if (tabBar) {
+                    tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+                }
+            } catch (e) {
+                console.error('Tab bar init failed:', e);
             }
             
-            // Render dynamic content
-            renderMealBuilder();
-            renderMealPlanContent();
-            renderWorkoutsPage();
-            renderWorkoutsContent();
+            // Render dynamic content (wrap each to isolate failures)
+            try {
+                renderMealBuilder();
+            } catch (e) {
+                console.error('Meal builder render failed:', e);
+            }
             
-            switchTab(hash);
-            setupCarousels();
-            loadCustomIcons();
+            try {
+                renderMealPlanContent();
+            } catch (e) {
+                console.error('Meal plan content render failed:', e);
+            }
+            
+            try {
+                renderWorkoutsPage();
+            } catch (e) {
+                console.error('Workouts page render failed:', e);
+            }
+            
+            try {
+                renderWorkoutsContent();
+            } catch (e) {
+                console.error('Workouts content render failed:', e);
+            }
+            
+            // Critical navigation (must work)
+            try {
+                switchTab(hash);
+            } catch (e) {
+                console.error('Switch tab failed:', e);
+            }
+            
+            try {
+                setupCarousels();
+            } catch (e) {
+                console.error('Setup carousels failed:', e);
+            }
+            
+            try {
+                loadCustomIcons();
+            } catch (e) {
+                console.error('Load custom icons failed:', e);
+            }
             
             console.log('initApp complete');
         }
