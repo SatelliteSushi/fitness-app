@@ -520,6 +520,266 @@
                 grid-template-columns: repeat(4, 1fr);
             }
         }
+        
+        /* Workout Session Full-Screen Overlay */
+        .workout-session {
+            position: fixed;
+            inset: 0;
+            background: var(--color-bg-dark);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        .workout-session.active {
+            display: flex;
+        }
+        
+        .session-header {
+            display: flex;
+            align-items: center;
+            padding: var(--space-md);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .session-back {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-accent-cyan);
+        }
+        
+        .session-title {
+            flex: 1;
+            text-align: center;
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .session-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-xl);
+            overflow-y: auto;
+        }
+        
+        .session-exercise {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+        
+        .session-exercise-name {
+            font-size: 24px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .session-set-info {
+            font-size: var(--font-size-lg);
+            opacity: 0.7;
+        }
+        
+        .session-timer {
+            text-align: center;
+            margin: var(--space-xl) 0;
+        }
+        
+        .timer-display {
+            font-size: 72px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        
+        .timer-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.6;
+            margin-top: var(--space-sm);
+        }
+        
+        .session-controls {
+            display: flex;
+            gap: var(--space-md);
+            justify-content: center;
+            margin: var(--space-xl) 0;
+        }
+        
+        .session-btn {
+            padding: 16px 32px;
+            border: 1px solid var(--color-accent-cyan);
+            background: transparent;
+            color: var(--color-accent-cyan);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .session-btn:hover {
+            background: var(--color-accent-cyan);
+            color: var(--color-bg-dark);
+        }
+        
+        .session-btn-primary {
+            background: var(--color-accent-cyan);
+            color: var(--color-bg-dark);
+        }
+        
+        .rest-adjuster {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            margin: var(--space-lg) 0;
+        }
+        
+        .rest-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--color-card-border);
+            background: transparent;
+            color: var(--color-text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .rest-value {
+            font-size: var(--font-size-lg);
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .progress-track {
+            margin: var(--space-xl) 0;
+            padding: 0 var(--space-md);
+        }
+        
+        .progress-path {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: var(--space-md) 0;
+        }
+        
+        .progress-node {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--color-card-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .progress-node.completed {
+            border-color: var(--color-accent-cyan);
+            background: var(--color-accent-cyan);
+            opacity: 1;
+            animation: nodePulse 0.5s ease;
+        }
+        
+        .progress-node.current {
+            border-color: var(--color-accent-cyan);
+            opacity: 1;
+            animation: nodePulse 1s ease infinite;
+        }
+        
+        .progress-line {
+            flex: 1;
+            height: 2px;
+            background: var(--color-card-border);
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-line.completed {
+            background: var(--color-accent-cyan);
+            opacity: 1;
+        }
+        
+        .rest-ring {
+            width: 200px;
+            height: 200px;
+            margin: var(--space-xl) auto;
+            position: relative;
+        }
+        
+        .rest-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .rest-ring-bg {
+            stroke: var(--color-card-border);
+        }
+        
+        .rest-ring-progress {
+            stroke: var(--color-accent-cyan);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear;
+        }
+        
+        .finish-screen {
+            text-align: center;
+            padding: var(--space-xl);
+        }
+        
+        .finish-title {
+            font-size: 32px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-xl);
+            animation: finishPulse 1s ease;
+        }
+        
+        .finish-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+            margin: var(--space-xl) 0;
+        }
+        
+        .finish-stat {
+            padding: var(--space-lg);
+            border: 1px solid var(--color-card-border);
+        }
+        
+        .finish-stat-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.6;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .finish-stat-value {
+            font-size: 24px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+        }
+        
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 16px var(--color-accent-cyan); }
+        }
+        
+        @keyframes finishPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -744,6 +1004,18 @@
                 </div>
             </div>
         </main>
+        
+        <!-- Workout Session Full-Screen Overlay -->
+        <div class="workout-session" id="workoutSession">
+            <div class="session-header">
+                <div class="session-back" onclick="exitWorkoutSession()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </div>
+                <div class="session-title" id="sessionTitle">Workout</div>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="session-content" id="sessionContent"></div>
+        </div>
         
         <!-- Tab Bar -->
         <nav class="tab-bar">
@@ -1183,6 +1455,295 @@
             });
         }
         
+        // ===== WORKOUT SESSION =====
+        
+        let sessionState = {
+            workout: null,
+            currentExerciseIndex: 0,
+            currentSet: 0,
+            isPaused: false,
+            isResting: false,
+            timerInterval: null,
+            elapsed: 0,
+            restRemaining: 0,
+            startTime: null,
+            completedSets: 0,
+            totalVolume: 0
+        };
+        
+        function startWorkoutSession(workoutId) {
+            const workout = getWorkouts().find(w => w.id === workoutId);
+            if (!workout || !workout.exercises || workout.exercises.length === 0) return;
+            
+            sessionState = {
+                workout,
+                currentExerciseIndex: 0,
+                currentSet: 1,
+                isPaused: false,
+                isResting: false,
+                timerInterval: null,
+                elapsed: 0,
+                restRemaining: 0,
+                startTime: Date.now(),
+                completedSets: 0,
+                totalVolume: 0
+            };
+            
+            document.getElementById('workoutSession').classList.add('active');
+            document.getElementById('sessionTitle').textContent = workout.name;
+            renderWorkoutSession();
+            startTimer();
+            vibrate(50);
+        }
+        
+        function exitWorkoutSession() {
+            if (sessionState.currentSet > 1 || sessionState.completedSets > 0) {
+                if (!confirm('Exit workout? Progress will be lost.')) return;
+            }
+            
+            document.getElementById('workoutSession').classList.remove('active');
+            if (sessionState.timerInterval) {
+                clearInterval(sessionState.timerInterval);
+            }
+            sessionState = {};
+        }
+        
+        function renderWorkoutSession() {
+            const content = document.getElementById('sessionContent');
+            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            
+            if (!ex) {
+                renderFinishScreen();
+                return;
+            }
+            
+            const totalSets = sessionState.workout.exercises.reduce((sum, e) => sum + (e.sets || 0), 0);
+            
+            content.innerHTML = `
+                <div class="session-exercise">
+                    <div class="session-exercise-name">${ex.name}</div>
+                    <div class="session-set-info">
+                        Set ${sessionState.currentSet} of ${ex.sets}
+                        ${ex.reps ? ` • ${ex.reps} reps` : ''}
+                        ${ex.weight ? ` • ${ex.weight} lbs` : ''}
+                    </div>
+                </div>
+                
+                <div class="session-timer">
+                    <div class="timer-display" id="timerDisplay">00:00</div>
+                    <div class="timer-label">${sessionState.isResting ? 'Rest Time' : 'Work Time'}</div>
+                </div>
+                
+                ${sessionState.isResting ? `
+                    <div class="rest-ring">
+                        <svg width="200" height="200">
+                            <circle class="rest-ring-bg" cx="100" cy="100" r="90" fill="none" stroke-width="8"/>
+                            <circle class="rest-ring-progress" id="restRing" cx="100" cy="100" r="90" fill="none" stroke-width="8"
+                                stroke-dasharray="565" stroke-dashoffset="0"/>
+                        </svg>
+                    </div>
+                    <div class="rest-adjuster">
+                        <button class="rest-btn" onclick="adjustRest(-5)">-</button>
+                        <div class="rest-value">${ex.rest || 60}s</div>
+                        <button class="rest-btn" onclick="adjustRest(5)">+</button>
+                    </div>
+                ` : ''}
+                
+                <div class="session-controls">
+                    ${sessionState.isResting ? `
+                        <button class="session-btn session-btn-primary" onclick="skipRest()">Skip Rest</button>
+                    ` : `
+                        <button class="session-btn ${sessionState.isPaused ? 'session-btn-primary' : ''}" onclick="togglePause()">
+                            ${sessionState.isPaused ? 'Resume' : 'Pause'}
+                        </button>
+                        <button class="session-btn session-btn-primary" onclick="completeSet()">Complete Set</button>
+                    `}
+                </div>
+                
+                <div class="progress-track">
+                    <div class="progress-path" id="progressPath"></div>
+                </div>
+            `;
+            
+            renderProgressTrack();
+            if (sessionState.isResting) {
+                startRestTimer();
+            }
+        }
+        
+        function renderProgressTrack() {
+            const path = document.getElementById('progressPath');
+            if (!path) return;
+            
+            let html = '';
+            let setIndex = 0;
+            
+            sessionState.workout.exercises.forEach((ex, exIdx) => {
+                for (let i = 0; i < ex.sets; i++) {
+                    const isCompleted = setIndex < sessionState.completedSets;
+                    const isCurrent = setIndex === sessionState.completedSets;
+                    
+                    html += `<div class="progress-node ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}">${setIndex + 1}</div>`;
+                    
+                    if (setIndex < sessionState.workout.exercises.reduce((sum, e) => sum + e.sets, 0) - 1) {
+                        html += `<div class="progress-line ${isCompleted ? 'completed' : ''}"></div>`;
+                    }
+                    
+                    setIndex++;
+                }
+            });
+            
+            path.innerHTML = html;
+        }
+        
+        function startTimer() {
+            sessionState.timerInterval = setInterval(() => {
+                if (!sessionState.isPaused && !sessionState.isResting) {
+                    sessionState.elapsed++;
+                    updateTimerDisplay(sessionState.elapsed);
+                }
+            }, 1000);
+        }
+        
+        function startRestTimer() {
+            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            sessionState.restRemaining = ex.rest || 60;
+            
+            const restInterval = setInterval(() => {
+                if (sessionState.restRemaining > 0) {
+                    sessionState.restRemaining--;
+                    updateTimerDisplay(sessionState.restRemaining);
+                    updateRestRing();
+                    
+                    if (sessionState.restRemaining === 0) {
+                        clearInterval(restInterval);
+                        vibrate(100);
+                        advanceToNextSet();
+                    }
+                } else {
+                    clearInterval(restInterval);
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay(seconds) {
+            const display = document.getElementById('timerDisplay');
+            if (!display) return;
+            
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            display.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        
+        function updateRestRing() {
+            const ring = document.getElementById('restRing');
+            if (!ring) return;
+            
+            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            const totalRest = ex.rest || 60;
+            const progress = sessionState.restRemaining / totalRest;
+            const circumference = 565;
+            const offset = circumference * (1 - progress);
+            
+            ring.style.strokeDashoffset = offset;
+        }
+        
+        function togglePause() {
+            sessionState.isPaused = !sessionState.isPaused;
+            renderWorkoutSession();
+            vibrate(30);
+        }
+        
+        function completeSet() {
+            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            sessionState.completedSets++;
+            sessionState.totalVolume += (ex.reps || 0) * (ex.weight || 0);
+            
+            vibrate([50, 50, 50]);
+            
+            if (sessionState.currentSet < ex.sets) {
+                sessionState.currentSet++;
+                sessionState.isResting = true;
+                renderWorkoutSession();
+            } else {
+                sessionState.currentExerciseIndex++;
+                sessionState.currentSet = 1;
+                
+                if (sessionState.currentExerciseIndex >= sessionState.workout.exercises.length) {
+                    renderFinishScreen();
+                } else {
+                    vibrate([100, 50, 100]);
+                    sessionState.isResting = true;
+                    renderWorkoutSession();
+                }
+            }
+        }
+        
+        function skipRest() {
+            sessionState.restRemaining = 0;
+            advanceToNextSet();
+            vibrate(30);
+        }
+        
+        function advanceToNextSet() {
+            sessionState.isResting = false;
+            renderWorkoutSession();
+        }
+        
+        function adjustRest(delta) {
+            const ex = sessionState.workout.exercises[sessionState.currentExerciseIndex];
+            ex.rest = Math.max(5, (ex.rest || 60) + delta);
+            
+            // Persist to workout
+            saveWorkout(sessionState.workout);
+            
+            sessionState.restRemaining = Math.max(0, sessionState.restRemaining + delta);
+            renderWorkoutSession();
+            vibrate(30);
+        }
+        
+        function renderFinishScreen() {
+            if (sessionState.timerInterval) {
+                clearInterval(sessionState.timerInterval);
+            }
+            
+            const totalTime = Math.floor((Date.now() - sessionState.startTime) / 1000);
+            const content = document.getElementById('sessionContent');
+            
+            content.innerHTML = `
+                <div class="finish-screen">
+                    <div class="finish-title">Workout Complete!</div>
+                    <div class="finish-stats">
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Total Time</div>
+                            <div class="finish-stat-value">${Math.floor(totalTime / 60)}:${String(totalTime % 60).padStart(2, '0')}</div>
+                        </div>
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Sets Completed</div>
+                            <div class="finish-stat-value">${sessionState.completedSets}</div>
+                        </div>
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Total Volume</div>
+                            <div class="finish-stat-value">${Math.round(sessionState.totalVolume)}</div>
+                        </div>
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Exercises</div>
+                            <div class="finish-stat-value">${sessionState.workout.exercises.length}</div>
+                        </div>
+                    </div>
+                    <button class="session-btn session-btn-primary" style="margin-top: 32px;" onclick="exitWorkoutSession()">Done</button>
+                </div>
+            `;
+            
+            vibrate([200, 100, 200, 100, 200]);
+        }
+        
+        function vibrate(pattern) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+        
         // ===== RENDER FUNCTIONS =====
         
         function renderMealPlanContent() {
@@ -1254,7 +1815,8 @@
                                 ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
                             </div>
                             <div class="card-content">
-                                <p style="opacity: 0.7;">${w.exercises?.length || 0} exercises</p>
+                                <p style="opacity: 0.7; margin-bottom: 12px;">${w.exercises?.length || 0} exercises</p>
+                                <button class="session-btn" onclick="setTodaysWorkout('${w.id}'); renderWorkoutsContent(); alert('Set as today\\'s workout!');">Select for Today</button>
                             </div>
                         </div>
                     `).join('');
@@ -1272,10 +1834,16 @@
                         </div>
                         <div class="card-content">
                             <p style="opacity: 0.7; margin-bottom: 16px;">${workout.exercises?.length || 0} exercises</p>
-                            <button class="card-badge" style="cursor: pointer; padding: 8px 16px;">START</button>
+                            ${workout.exercises ? workout.exercises.map(ex => `
+                                <div style="margin-bottom: 8px; padding: 8px; border-left: 2px solid var(--color-accent-cyan); padding-left: 12px;">
+                                    <div style="font-weight: 500;">${ex.name}</div>
+                                    <div style="opacity: 0.6; font-size: 13px;">${ex.sets} × ${ex.reps}${ex.weight ? ` @ ${ex.weight} lbs` : ''}</div>
+                                </div>
+                            `).join('') : ''}
+                            <button class="session-btn session-btn-primary" style="margin-top: 16px; width: 100%;" onclick="startWorkoutSession('${workout.id}')">START</button>
                         </div>
                     </div>
-                ` : '<div class="card"><p style="opacity: 0.6;">No workout selected for today.</p></div>';
+                ` : '<div class="card"><p style="opacity: 0.6;">No workout selected for today. Go to Workouts page to select one.</p></div>';
             }
         }
         
