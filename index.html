@@ -211,6 +211,47 @@
             transition: all 0.3s ease;
         }
         
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: var(--border-radius);
+            padding: 1px;
+            background: radial-gradient(circle at center, var(--color-glow) 0%, transparent 70%);
+            mask-image: 
+                repeating-linear-gradient(0deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size)),
+                repeating-linear-gradient(90deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size));
+            -webkit-mask-image: 
+                repeating-linear-gradient(0deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size)),
+                repeating-linear-gradient(90deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size));
+            -webkit-mask-composite: source-in;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.3) 0%, transparent 70%);
+        }
+        
         
         .card:hover {
             border-color: var(--color-accent-cyan);
@@ -743,7 +784,7 @@
             },
             'workouts': {
                 title: 'WORKOUTS',
-                pages: ['Page 1', 'Page 2', 'Page 3']
+                pages: ["Today's Workout", "Workouts"]
             },
             'schedule': {
                 title: 'SCHEDULE',
@@ -754,6 +795,126 @@
                 pages: []
             }
         };
+        
+        // ===== DATA MODELS & LOCALSTORAGE =====
+        
+        // Seed recipes from JSON
+        const SEED_RECIPES = [
+            {"name":"Egg Casserole","servings":6,"note":"Cutting into 8 gives ~540 kcal / 36 P per serving","ingredients":[{"item":"whole eggs","amount":6,"unit":"large"},{"item":"liquid egg whites","amount":32,"unit":"oz","note":"1 carton, ~100 g protein"},{"item":"sharp cheddar","amount":8,"unit":"oz","note":"1 block, shredded"},{"item":"pork breakfast sausage","amount":16,"unit":"oz","note":"1 tube, browned and drained"},{"item":"frozen home fries","amount":26,"unit":"oz","note":"1 bag, par-cooked"},{"item":"bread","amount":7,"unit":"slices","note":"about 1/3 loaf, cubed"},{"item":"spinach","amount":2,"unit":"cups","note":"approximate; user said 'some'"},{"item":"milk","amount":0.25,"unit":"cup","note":"approximate; 'a bit'"}],"steps":["Heat oven to 350F and grease a 9x13 pan.","Brown the sausage and drain the fat.","Par-cook the home fries (microwave or roast) and cook down the spinach, or blend the spinach into the eggs.","Whisk eggs, egg whites, and milk; season generously.","Layer bread cubes, home fries, and sausage in the pan, pour the egg mix over, top with cheddar, and let it soak 5-10 min.","Bake until the center barely jiggles, about 45-55 min. Rest 10 min, then cut into 6."],"macros_per_serving":{"kcal":720,"protein_g":48,"carbs_g":43,"fat_g":41}},
+            {"name":"Buffalo Tuna Quesadilla","servings":1,"ingredients":[{"item":"canned tuna","amount":1,"unit":"can (5 oz)"},{"item":"Greek yogurt","amount":0.5,"unit":"cup"},{"item":"blue cheese dressing","amount":1,"unit":"tbsp","note":"approximate; 'a bit'"},{"item":"buffalo sauce","amount":1,"unit":"tbsp","note":"to taste"},{"item":"medium flour tortillas","amount":2,"unit":"tortillas"},{"item":"butter","amount":1,"unit":"tbsp","note":"for toasting"}],"steps":["Drain the tuna and mix with Greek yogurt, blue cheese dressing, and buffalo sauce.","Spread onto the tortillas and fold.","Lightly butter the outsides and toast in a pan over medium heat until golden on both sides."],"macros_per_serving":{"kcal":650,"protein_g":47,"carbs_g":52,"fat_g":30}}
+        ];
+        
+        // Recipe functions
+        function getRecipes() {
+            const stored = localStorage.getItem('fitness_recipes');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function saveRecipe(recipe) {
+            const recipes = getRecipes();
+            if (!recipe.id) recipe.id = 'r_' + Date.now();
+            const index = recipes.findIndex(r => r.id === recipe.id);
+            if (index >= 0) recipes[index] = recipe;
+            else recipes.push(recipe);
+            localStorage.setItem('fitness_recipes', JSON.stringify(recipes));
+            return recipe;
+        }
+        
+        function deleteRecipe(id) {
+            const recipes = getRecipes().filter(r => r.id !== id);
+            localStorage.setItem('fitness_recipes', JSON.stringify(recipes));
+        }
+        
+        // Schedule functions (day of week 0-6, slot like "Meal 1", "Meal 2", "Shake", or custom time)
+        function getSchedule() {
+            const stored = localStorage.getItem('fitness_schedule');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function scheduleRecipe(recipeId, days, slot) {
+            const schedule = getSchedule();
+            days.forEach(day => {
+                schedule.push({ recipeId, day, slot, id: 's_' + Date.now() + '_' + day });
+            });
+            localStorage.setItem('fitness_schedule', JSON.stringify(schedule));
+        }
+        
+        function removeSchedule(scheduleId) {
+            const schedule = getSchedule().filter(s => s.id !== scheduleId);
+            localStorage.setItem('fitness_schedule', JSON.stringify(schedule));
+        }
+        
+        // Tracking (meals eaten per date)
+        function getTracking(date) {
+            const key = 'fitness_tracking_' + date;
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function toggleMealEaten(date, scheduleId) {
+            const key = 'fitness_tracking_' + date;
+            const tracking = getTracking(date);
+            const index = tracking.indexOf(scheduleId);
+            if (index >= 0) tracking.splice(index, 1);
+            else tracking.push(scheduleId);
+            localStorage.setItem(key, JSON.stringify(tracking));
+        }
+        
+        // Workout functions
+        function getWorkouts() {
+            const stored = localStorage.getItem('fitness_workouts');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function saveWorkout(workout) {
+            const workouts = getWorkouts();
+            if (!workout.id) workout.id = 'w_' + Date.now();
+            const index = workouts.findIndex(w => w.id === workout.id);
+            if (index >= 0) workouts[index] = workout;
+            else workouts.push(workout);
+            localStorage.setItem('fitness_workouts', JSON.stringify(workouts));
+            return workout;
+        }
+        
+        function deleteWorkout(id) {
+            const workouts = getWorkouts().filter(w => w.id !== id);
+            localStorage.setItem('fitness_workouts', JSON.stringify(workouts));
+        }
+        
+        // Today's workout selection
+        function getTodaysWorkout() {
+            return localStorage.getItem('fitness_todays_workout');
+        }
+        
+        function setTodaysWorkout(workoutId) {
+            localStorage.setItem('fitness_todays_workout', workoutId);
+        }
+        
+        // Seed data on first run
+        function seedData() {
+            if (localStorage.getItem('fitness_seeded')) return;
+            
+            // Seed recipes
+            SEED_RECIPES.forEach(recipe => {
+                recipe.id = 'r_seed_' + Date.now() + '_' + Math.random();
+                recipe.tags = recipe.tags || [];
+                saveRecipe(recipe);
+            });
+            
+            // Seed sample workout
+            const sampleWorkout = {
+                name: 'Sample Push Day',
+                isSample: true,
+                exercises: [
+                    { name: 'Bench Press', sets: 4, reps: 8, weight: 185, rest: 120 },
+                    { name: 'Overhead Press', sets: 3, reps: 10, weight: 95, rest: 90 },
+                    { name: 'Tricep Dips', sets: 3, reps: 12, rest: 60 }
+                ]
+            };
+            saveWorkout(sampleWorkout);
+            
+            localStorage.setItem('fitness_seeded', 'true');
+        }
         
         let currentTab = null; // Start as null so first switchTab always runs
         let currentPage = 0;
@@ -1022,9 +1183,109 @@
             });
         }
         
+        // ===== RENDER FUNCTIONS =====
+        
+        function renderMealPlanContent() {
+            // My Meals page (page 2)
+            const myMealsPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(3) .content');
+            if (myMealsPage) {
+                const recipes = getRecipes();
+                myMealsPage.innerHTML = recipes.length === 0 
+                    ? '<div class="card"><p style="opacity: 0.6;">No recipes yet. Seeds will load on first run.</p></div>'
+                    : recipes.map(r => `
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">${r.name}</h2>
+                                <span class="card-badge">${r.servings} servings</span>
+                            </div>
+                            <div class="card-content">
+                                ${r.note ? `<p style="opacity: 0.7; font-size: 13px; margin-bottom: 12px;">${r.note}</p>` : ''}
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Calories</span>
+                                    <span class="metric-value">${r.macros_per_serving?.kcal || '?'}</span>
+                                </div>
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Protein</span>
+                                    <span class="metric-value">${r.macros_per_serving?.protein_g || '?'}g</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            
+            // Today's Meals page (page 0)
+            const todayPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(1) .content');
+            if (todayPage) {
+                const today = new Date().getDay();
+                const schedule = getSchedule().filter(s => s.day === today);
+                todayPage.innerHTML = schedule.length === 0
+                    ? '<div class="card"><p style="opacity: 0.6;">No meals scheduled for today.</p></div>'
+                    : schedule.map(s => {
+                        const recipe = getRecipes().find(r => r.id === s.recipeId);
+                        return recipe ? `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">${recipe.name}</h2>
+                                    <span class="card-badge">${s.slot}</span>
+                                </div>
+                                <div class="card-content">
+                                    <div class="card-metric">
+                                        <span class="metric-label">Estimated Calories</span>
+                                        <span class="metric-value">${recipe.macros_per_serving?.kcal || '?'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : '';
+                    }).join('');
+            }
+        }
+        
+        function renderWorkoutsContent() {
+            // Workouts list page (page 1)
+            const workoutsPage = document.querySelector('#workouts .page-carousel .page:nth-child(2) .content');
+            if (workoutsPage) {
+                const workouts = getWorkouts();
+                workoutsPage.innerHTML = workouts.length === 0
+                    ? '<div class="card"><p style="opacity: 0.6;">No workouts yet.</p></div>'
+                    : workouts.map(w => `
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">${w.name}</h2>
+                                ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
+                            </div>
+                            <div class="card-content">
+                                <p style="opacity: 0.7;">${w.exercises?.length || 0} exercises</p>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            
+            // Today's Workout page (page 0)
+            const todayWorkoutPage = document.querySelector('#workouts .page-carousel .page:nth-child(1) .content');
+            if (todayWorkoutPage) {
+                const todayId = getTodaysWorkout();
+                const workout = todayId ? getWorkouts().find(w => w.id === todayId) : null;
+                todayWorkoutPage.innerHTML = workout ? `
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">${workout.name}</h2>
+                        </div>
+                        <div class="card-content">
+                            <p style="opacity: 0.7; margin-bottom: 16px;">${workout.exercises?.length || 0} exercises</p>
+                            <button class="card-badge" style="cursor: pointer; padding: 8px 16px;">START</button>
+                        </div>
+                    </div>
+                ` : '<div class="card"><p style="opacity: 0.6;">No workout selected for today.</p></div>';
+            }
+        }
+        
         // Initialize app
         function initApp() {
             console.log('initApp called');
+            
+            // Seed data on first run
+            seedData();
+            
             const hash = window.location.hash.slice(1) || 'meal-plan';
             
             // Initialize tab bar indicator
@@ -1032,6 +1293,10 @@
             if (tabBar) {
                 tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
             }
+            
+            // Render dynamic content
+            renderMealPlanContent();
+            renderWorkoutsContent();
             
             switchTab(hash);
             setupCarousels();
