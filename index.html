@@ -1774,30 +1774,88 @@
                     `).join('');
             }
             
-            // Today's Meals page (page 0)
+            // Today's Meals page (page 0) with eaten tracking and macro totals
             const todayPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(1) .content');
             if (todayPage) {
                 const today = new Date().getDay();
+                const dateKey = new Date().toISOString().split('T')[0];
                 const schedule = getSchedule().filter(s => s.day === today);
-                todayPage.innerHTML = schedule.length === 0
-                    ? '<div class="card"><p style="opacity: 0.6;">No meals scheduled for today.</p></div>'
-                    : schedule.map(s => {
-                        const recipe = getRecipes().find(r => r.id === s.recipeId);
-                        return recipe ? `
-                            <div class="card">
-                                <div class="card-header">
-                                    <h2 class="card-title">${recipe.name}</h2>
-                                    <span class="card-badge">${s.slot}</span>
-                                </div>
-                                <div class="card-content">
-                                    <div class="card-metric">
-                                        <span class="metric-label">Estimated Calories</span>
-                                        <span class="metric-value">${recipe.macros_per_serving?.kcal || '?'}</span>
-                                    </div>
-                                </div>
+                const eaten = getTracking(dateKey);
+                
+                let totalPlanned = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+                let totalEaten = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+                
+                const mealCards = schedule.map(s => {
+                    const recipe = getRecipes().find(r => r.id === s.recipeId);
+                    if (!recipe) return '';
+                    
+                    const isEaten = eaten.includes(s.id);
+                    const macros = recipe.macros_per_serving || {};
+                    
+                    totalPlanned.kcal += macros.kcal || 0;
+                    totalPlanned.protein += macros.protein_g || 0;
+                    totalPlanned.carbs += macros.carbs_g || 0;
+                    totalPlanned.fat += macros.fat_g || 0;
+                    
+                    if (isEaten) {
+                        totalEaten.kcal += macros.kcal || 0;
+                        totalEaten.protein += macros.protein_g || 0;
+                        totalEaten.carbs += macros.carbs_g || 0;
+                        totalEaten.fat += macros.fat_g || 0;
+                    }
+                    
+                    return `
+                        <div class="card" style="opacity: ${isEaten ? 0.6 : 1};">
+                            <div class="card-header">
+                                <h2 class="card-title">${recipe.name}</h2>
+                                <span class="card-badge">${s.slot}</span>
                             </div>
-                        ` : '';
-                    }).join('');
+                            <div class="card-content">
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Calories</span>
+                                    <span class="metric-value">${macros.kcal || '?'}</span>
+                                </div>
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Protein</span>
+                                    <span class="metric-value">${macros.protein_g || '?'}g</span>
+                                </div>
+                                <button class="session-btn ${isEaten ? 'session-btn-primary' : ''}" 
+                                    style="margin-top: 12px; width: 100%;"
+                                    onclick="toggleMealEaten('${dateKey}', '${s.id}'); renderMealPlanContent();">
+                                    ${isEaten ? '✓ Eaten' : 'Mark as Eaten'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                const macroTotalsCard = schedule.length > 0 ? `
+                    <div class="card" style="border-color: var(--color-accent-cyan);">
+                        <div class="card-header">
+                            <h2 class="card-title">Daily Totals (Estimated)</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-metric">
+                                <span class="metric-label">Calories</span>
+                                <span class="metric-value">${Math.round(totalEaten.kcal)} / ${Math.round(totalPlanned.kcal)}</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Protein</span>
+                                <span class="metric-value">${Math.round(totalEaten.protein)}g / ${Math.round(totalPlanned.protein)}g</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Carbs</span>
+                                <span class="metric-value">${Math.round(totalEaten.carbs)}g / ${Math.round(totalPlanned.carbs)}g</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Fat</span>
+                                <span class="metric-value">${Math.round(totalEaten.fat)}g / ${Math.round(totalPlanned.fat)}g</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : '';
+                
+                todayPage.innerHTML = macroTotalsCard + (mealCards || '<div class="card"><p style="opacity: 0.6;">No meals scheduled for today.</p></div>');
             }
         }
         
