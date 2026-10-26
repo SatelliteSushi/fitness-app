@@ -1,0 +1,2988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Fitness">
+    <title>Fitness</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-180.png">
+    <meta name="theme-color" content="#0a0e1a">
+    
+    <style>
+        /* Design Tokens */
+        :root {
+            --color-bg-dark: #0a0e1a;
+            --color-bg-navy: #121b2d;
+            --color-accent-cyan: #00d9ff;
+            --color-accent-blue: #0066ff;
+            --color-text-primary: #e8eef5;
+            --color-text-secondary: #8b9bb0;
+            --color-card-border: rgba(0, 217, 255, 0.3);
+            --color-card-bg: rgba(18, 27, 45, 0.6);
+            --color-glow: rgba(0, 217, 255, 0.15);
+            
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+            --font-size-xs: 11px;
+            --font-size-sm: 13px;
+            --font-size-base: 15px;
+            --font-size-lg: 20px;
+            --font-size-xl: 24px;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            
+            --border-radius: 0;
+            --border-width: 1px;
+            --card-gap: var(--space-md);
+            --header-height: 70px;
+            --tab-bar-height: 60px;
+            --max-content-width: 600px;
+            --matrix-cell-size: 3px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Form elements - prevent overflow */
+        input, textarea, select {
+            box-sizing: border-box;
+            min-width: 0; /* Allow flex/grid shrinking */
+            max-width: 100%;
+        }
+        
+        html {
+            background: var(--color-bg-dark);
+            overscroll-behavior: none;
+        }
+        
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            color: var(--color-text-primary);
+            background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-bg-navy) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+        
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        /* Header - Solid, no blur */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: var(--header-height);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 var(--space-md);
+            background: var(--color-bg-dark);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .app-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+        
+        .app-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            height: 1px;
+            background: rgba(0, 217, 255, 0.1);
+        }
+        
+        /* Page Navigation - horizontal row of all titles */
+        .page-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+            overflow: visible;
+            max-width: 100%;
+        }
+        
+        .page-titles-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            will-change: transform;
+        }
+        
+        .page-title-item {
+            cursor: pointer;
+            opacity: 0.35;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            will-change: opacity;
+        }
+        
+        .page-title-item.active {
+            opacity: 1;
+        }
+        
+        .page-title-separator {
+            opacity: 0.35;
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            height: 100%;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Page Carousel with CSS Scroll Snap */
+        .page-carousel {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            height: 100%;
+        }
+        
+        .page-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .page {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .content {
+            max-width: var(--max-content-width);
+            margin: 0 auto;
+            padding: var(--space-lg) var(--space-md);
+            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg) + env(safe-area-inset-bottom));
+        }
+        
+        /* Card Component */
+        .card {
+            background: var(--color-card-bg);
+            border: var(--border-width) solid var(--color-card-border);
+            border-radius: var(--border-radius);
+            padding: var(--space-lg);
+            margin-bottom: var(--card-gap);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: var(--border-radius);
+            padding: 1px;
+            background: radial-gradient(circle at center, var(--color-glow) 0%, transparent 70%);
+            mask-image: 
+                repeating-linear-gradient(0deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size)),
+                repeating-linear-gradient(90deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size));
+            -webkit-mask-image: 
+                repeating-linear-gradient(0deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size)),
+                repeating-linear-gradient(90deg, 
+                    transparent 0px, 
+                    transparent calc(var(--matrix-cell-size) - 1px),
+                    black calc(var(--matrix-cell-size) - 1px),
+                    black var(--matrix-cell-size));
+            -webkit-mask-composite: source-in;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+            background: radial-gradient(circle at center, rgba(0, 217, 255, 0.3) 0%, transparent 70%);
+        }
+        
+        
+        .card:hover {
+            border-color: var(--color-accent-cyan);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+        
+        .card-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            letter-spacing: -0.3px;
+        }
+        
+        .card-badge {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 8px;
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--border-radius);
+            background: rgba(0, 217, 255, 0.05);
+        }
+        
+        .card-content {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+        
+        .card-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: var(--space-sm);
+            padding-top: var(--space-sm);
+            border-top: 1px solid rgba(139, 155, 176, 0.1);
+        }
+        
+        .metric-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+        
+        .metric-value {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+        }
+        
+        /* Settings Content */
+        .settings-content {
+            overflow-y: auto;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        .settings-section {
+            max-width: var(--max-content-width);
+            margin: 0 auto;
+            padding: var(--space-lg) var(--space-md);
+            padding-bottom: calc(var(--tab-bar-height) + var(--space-lg) + env(safe-area-inset-bottom));
+        }
+        
+        .settings-section-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-md);
+        }
+        
+        .icon-upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+        
+        .icon-upload-item {
+            border: 1px solid var(--color-card-border);
+            padding: var(--space-md);
+            background: var(--color-card-bg);
+            overflow: hidden;
+        }
+        
+        .icon-upload-item label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .icon-preview {
+            width: 40px;
+            height: 40px;
+            margin: var(--space-sm) 0;
+            border: 1px solid var(--color-card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-dark);
+        }
+        
+        .icon-preview svg, .icon-preview img {
+            width: 24px;
+            height: 24px;
+            stroke: var(--color-text-secondary);
+        }
+        
+        .icon-preview img {
+            object-fit: contain;
+        }
+        
+        .icon-upload-item input[type="file"] {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-xs);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .icon-upload-item button {
+            width: 100%;
+            padding: var(--space-xs);
+            background: none;
+            border: 1px solid var(--color-card-border);
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-xs);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-upload-item button:hover {
+            border-color: var(--color-accent-cyan);
+            color: var(--color-accent-cyan);
+        }
+        
+        .build-info {
+            font-size: 10px;
+            color: var(--color-text-secondary);
+            padding: var(--space-md) 0;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            letter-spacing: 0.3px;
+            opacity: 0.6;
+            margin-top: var(--space-lg);
+        }
+        
+        .build-info-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-secondary);
+            opacity: 0.5;
+            margin-bottom: 4px;
+        }
+        
+        /* Tab Bar - Fixed at bottom, extends through safe area */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: var(--color-bg-dark);
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            padding-top: var(--space-xs);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .tab-bar.hidden {
+            transform: translateY(100%);
+        }
+        
+        .tab-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25%;
+            height: 2px;
+            background: var(--color-accent-cyan);
+            transition: transform 0.3s ease;
+            will-change: transform;
+        }
+        
+        .tab-bar[data-active="0"]::before { transform: translateX(0%); }
+        .tab-bar[data-active="1"]::before { transform: translateX(100%); }
+        .tab-bar[data-active="2"]::before { transform: translateX(200%); }
+        .tab-bar[data-active="3"]::before { transform: translateX(300%); }
+        
+        .tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: var(--space-xs);
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            transition: all 0.2s ease;
+        }
+        
+        .tab-icon {
+            width: 28px;
+            height: 28px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tab-icon svg, .tab-icon img {
+            width: 100%;
+            height: 100%;
+            stroke: var(--color-text-secondary);
+            transition: stroke 0.2s ease, filter 0.2s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .tab-icon img {
+            object-fit: contain;
+        }
+        
+        .tab.active .tab-icon svg {
+            stroke: var(--color-accent-cyan);
+        }
+        
+        .tab.active .tab-icon img {
+            filter: brightness(0) saturate(100%) invert(67%) sepia(89%) saturate(2899%) hue-rotate(161deg) brightness(103%) contrast(101%);
+        }
+        
+        .tab-label {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            letter-spacing: 0.3px;
+            transition: color 0.2s ease;
+        }
+        
+        .tab.active .tab-label {
+            color: var(--color-accent-cyan);
+        }
+        
+        @media (min-width: 768px) {
+            .tab-bar {
+                position: static;
+                height: auto;
+                max-width: var(--max-content-width);
+                margin: 0 auto var(--space-lg);
+                border-radius: var(--border-radius);
+                border: 1px solid var(--color-card-border);
+            }
+            
+            .icon-upload-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* Workout Session Full-Screen Overlay */
+        .workout-session {
+            position: fixed;
+            inset: 0;
+            background: var(--color-bg-dark);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        .workout-session.active {
+            display: flex;
+        }
+        
+        .session-header {
+            display: flex;
+            align-items: center;
+            padding: var(--space-md);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .session-back {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--color-accent-cyan);
+        }
+        
+        .session-title {
+            flex: 1;
+            text-align: center;
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .session-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-xl);
+            overflow-y: auto;
+        }
+        
+        .session-exercise {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+        
+        .session-exercise-name {
+            font-size: 24px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .session-set-info {
+            font-size: var(--font-size-lg);
+            opacity: 0.7;
+        }
+        
+        .session-timer {
+            text-align: center;
+            margin: var(--space-xl) 0;
+        }
+        
+        .timer-display {
+            font-size: 72px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        
+        .timer-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.6;
+            margin-top: var(--space-sm);
+        }
+        
+        .session-controls {
+            display: flex;
+            gap: var(--space-md);
+            justify-content: center;
+            margin: var(--space-xl) 0;
+        }
+        
+        .session-btn {
+            padding: 16px 32px;
+            border: 1px solid var(--color-accent-cyan);
+            background: transparent;
+            color: var(--color-accent-cyan);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .session-btn:hover {
+            background: var(--color-accent-cyan);
+            color: var(--color-bg-dark);
+        }
+        
+        .session-btn-primary {
+            background: var(--color-accent-cyan);
+            color: var(--color-bg-dark);
+        }
+        
+        .rest-adjuster {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            margin: var(--space-lg) 0;
+        }
+        
+        .rest-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--color-card-border);
+            background: transparent;
+            color: var(--color-text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .rest-value {
+            font-size: var(--font-size-lg);
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .progress-track {
+            margin: var(--space-xl) 0;
+            padding: 0 var(--space-md);
+        }
+        
+        .progress-path {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: var(--space-md) 0;
+        }
+        
+        .progress-node {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--color-card-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .progress-node.completed {
+            border-color: var(--color-accent-cyan);
+            background: var(--color-accent-cyan);
+            opacity: 1;
+            animation: nodePulse 0.5s ease;
+        }
+        
+        .progress-node.current {
+            border-color: var(--color-accent-cyan);
+            opacity: 1;
+            animation: nodePulse 1s ease infinite;
+        }
+        
+        .progress-line {
+            flex: 1;
+            height: 2px;
+            background: var(--color-card-border);
+            opacity: 0.3;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-line.completed {
+            background: var(--color-accent-cyan);
+            opacity: 1;
+        }
+        
+        .rest-ring {
+            width: 200px;
+            height: 200px;
+            margin: var(--space-xl) auto;
+            position: relative;
+        }
+        
+        .rest-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .rest-ring-bg {
+            stroke: var(--color-card-border);
+        }
+        
+        .rest-ring-progress {
+            stroke: var(--color-accent-cyan);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear;
+        }
+        
+        .finish-screen {
+            text-align: center;
+            padding: var(--space-xl);
+        }
+        
+        .finish-title {
+            font-size: 32px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+            margin-bottom: var(--space-xl);
+            animation: finishPulse 1s ease;
+        }
+        
+        .finish-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+            margin: var(--space-xl) 0;
+        }
+        
+        .finish-stat {
+            padding: var(--space-lg);
+            border: 1px solid var(--color-card-border);
+        }
+        
+        .finish-stat-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.6;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .finish-stat-value {
+            font-size: 24px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-accent-cyan);
+        }
+        
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 16px var(--color-accent-cyan); }
+        }
+        
+        @keyframes finishPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Master Timer Bar (replaces tab bar during workout) */
+        .master-timer-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: var(--color-bg-dark);
+            border-top: 2px solid var(--color-accent-cyan);
+            z-index: 1001;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+        }
+        
+        .master-timer-bar.active {
+            display: flex;
+        }
+        
+        .master-timer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .master-timer-time {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-accent-cyan);
+        }
+        
+        .master-timer-label {
+            font-size: 11px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* In-app HUD Dialog System */
+        .hud-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .hud-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .hud-dialog {
+            background: var(--color-card-bg);
+            border: 2px solid var(--color-accent-cyan);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            min-width: 280px;
+            max-width: 90vw;
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+        
+        .hud-dialog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .hud-dialog-message {
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        
+        .hud-dialog-actions {
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+        }
+        
+        .hud-action-btn {
+            padding: 12px;
+            background: var(--color-bg-navy);
+            border: 1px solid var(--color-card-border);
+            color: var(--color-text-primary);
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .hud-action-btn:hover {
+            border-color: var(--color-accent-cyan);
+            background: rgba(0, 217, 255, 0.1);
+        }
+        
+        .hud-action-btn.primary {
+            background: var(--color-accent-cyan);
+            color: var(--color-bg-dark);
+            border-color: var(--color-accent-cyan);
+            font-weight: 600;
+        }
+        
+        .hud-action-btn.danger {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Session Card Animations */
+        .session-card-active {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .session-card-active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--color-accent-cyan);
+            width: 0%;
+            transition: width 0.3s linear;
+        }
+        
+        .session-card-completed {
+            animation: cardComplete 0.5s ease;
+        }
+        
+        @keyframes cardComplete {
+            0% { background: var(--color-card-bg); opacity: 1; }
+            50% { background: rgba(0, 217, 255, 0.2); transform: scale(1.02); }
+            100% { background: var(--color-card-bg); opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1 class="app-title" id="appTitle">MEAL PLAN</h1>
+            <div class="page-nav" id="pageNav">
+                <div class="page-titles-row" id="pageTitlesRow"></div>
+            </div>
+        </header>
+        
+        <main class="main">
+            <!-- Meal Plan Tab -->
+            <div id="meal-plan" class="tab-content active">
+                <div class="page-carousel" data-carousel="meal-plan">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Breakfast</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Start your day with balanced nutrition</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Calories</span>
+                                        <span class="metric-value">450</span>
+                                    </div>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Protein</span>
+                                        <span class="metric-value">25g</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Lunch</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Midday fuel for sustained energy</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Calories</span>
+                                        <span class="metric-value">680</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Create Meal</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Build custom meals to fit your macros</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Recipes</span>
+                                        <span class="metric-value">120+</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Saved Meals</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Your favorite meal combinations</p>
+                                    <div class="card-metric">
+                                        <span class="metric-label">Saved</span>
+                                        <span class="metric-value">12</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Workouts Tab -->
+            <div id="workouts" class="tab-content">
+                <div class="page-carousel" data-carousel="workouts">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 1</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 2</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 3</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Workouts content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Schedule Tab -->
+            <div id="schedule" class="tab-content">
+                <div class="page-carousel" data-carousel="schedule">
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 1</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 2</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Page 3</h2>
+                                    <span class="card-badge">Sample</span>
+                                </div>
+                                <div class="card-content">
+                                    <p>Schedule content placeholder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">Custom Tab Icons</h3>
+                        <div class="icon-upload-grid">
+                            <div class="icon-upload-item">
+                                <label>Meal Plan</label>
+                                <div class="icon-preview" id="mealPlanPreview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('meal-plan', this)" />
+                                <button onclick="resetIcon('meal-plan')">Reset</button>
+                            </div>
+                            <div class="icon-upload-item">
+                                <label>Workouts</label>
+                                <div class="icon-preview" id="workoutsPreview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 3-1 1-4 4-3-3-4 4-3-3-4 4-1 1"/><circle cx="16" cy="8" r="2"/></svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('workouts', this)" />
+                                <button onclick="resetIcon('workouts')">Reset</button>
+                            </div>
+                            <div class="icon-upload-item">
+                                <label>Schedule</label>
+                                <div class="icon-preview" id="schedulePreview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('schedule', this)" />
+                                <button onclick="resetIcon('schedule')">Reset</button>
+                            </div>
+                            <div class="icon-upload-item">
+                                <label>Settings</label>
+                                <div class="icon-preview" id="settingsPreview">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </div>
+                                <input type="file" accept="image/*" onchange="uploadIcon('settings', this)" />
+                                <button onclick="resetIcon('settings')">Reset</button>
+                            </div>
+                        </div>
+                        
+                        <div class="build-info">
+                            <div class="build-info-label">Build</div>
+                            <div id="buildInfo">2026-10-26 07:07:43 UTC</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Workout Session Full-Screen Overlay -->
+        <div class="workout-session" id="workoutSession">
+            <div class="session-header">
+                <div class="session-back" onclick="exitWorkoutSession()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </div>
+                <div class="session-title" id="sessionTitle">Workout</div>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="session-content" id="sessionContent"></div>
+        </div>
+        
+        <!-- Workout Editor Overlay -->
+        <div class="workout-session" id="workoutEditor">
+            <div class="session-header">
+                <div class="session-back" onclick="closeWorkoutEditor()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </div>
+                <div class="session-title">Edit Workout</div>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="session-content" id="workoutEditorContent" style="padding: 20px;"></div>
+        </div>
+        
+        <!-- Tab Bar -->
+        <nav class="tab-bar">
+            <a href="javascript:void(0)" class="tab" data-tab="meal-plan" data-title="MEAL PLAN" onclick="switchTab('meal-plan', event)">
+                <div class="tab-icon" id="mealPlanIcon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                </div>
+                <span class="tab-label">Meal Plan</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="workouts" data-title="WORKOUTS" onclick="switchTab('workouts', event)">
+                <div class="tab-icon" id="workoutsIcon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 3-1 1-4 4-3-3-4 4-3-3-4 4-1 1"/><circle cx="16" cy="8" r="2"/></svg>
+                </div>
+                <span class="tab-label">Workouts</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="schedule" data-title="SCHEDULE" onclick="switchTab('schedule', event)">
+                <div class="tab-icon" id="scheduleIcon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                </div>
+                <span class="tab-label">Schedule</span>
+            </a>
+            <a href="javascript:void(0)" class="tab" data-tab="settings" data-title="SETTINGS" onclick="switchTab('settings', event)">
+                <div class="tab-icon" id="settingsIcon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <span class="tab-label">Settings</span>
+            </a>
+        </nav>
+        
+        <!-- Master Timer Bar (shows during workout, replaces tab bar) -->
+        <div class="master-timer-bar" id="masterTimerBar">
+            <div class="master-timer-info">
+                <div class="master-timer-time" id="masterTimerTime">00:00</div>
+                <div class="master-timer-label">Total Remaining</div>
+            </div>
+            <button class="session-btn" onclick="toggleWorkoutPause()" id="masterPauseBtn">Pause</button>
+        </div>
+        
+        <!-- HUD Dialog Overlay -->
+        <div class="hud-overlay" id="hudOverlay" onclick="if(event.target===this) closeHudDialog()">
+            <div class="hud-dialog" id="hudDialog">
+                <div class="hud-dialog-title" id="hudTitle"></div>
+                <div class="hud-dialog-message" id="hudMessage"></div>
+                <div class="hud-dialog-actions" id="hudActions"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('buildInfo').textContent = '2026-10-26 07:07:43 UTC';
+        
+        const tabConfig = {
+            'meal-plan': {
+                title: 'MEAL PLAN',
+                pages: ["Today's Meals", "Meal Builder", "My Meals"]
+            },
+            'workouts': {
+                title: 'WORKOUTS',
+                pages: ["Today's Workout", "Workouts"]
+            },
+            'schedule': {
+                title: 'SCHEDULE',
+                pages: ['Page 1', 'Page 2', 'Page 3']
+            },
+            'settings': {
+                title: 'SETTINGS',
+                pages: []
+            }
+        };
+        
+        // ===== DATA MODELS & LOCALSTORAGE =====
+        
+        // Seed recipes from JSON
+        const SEED_RECIPES = [
+            {"name":"Egg Casserole","servings":6,"note":"Cutting into 8 gives ~540 kcal / 36 P per serving","ingredients":[{"item":"whole eggs","amount":6,"unit":"large"},{"item":"liquid egg whites","amount":32,"unit":"oz","note":"1 carton, ~100 g protein"},{"item":"sharp cheddar","amount":8,"unit":"oz","note":"1 block, shredded"},{"item":"pork breakfast sausage","amount":16,"unit":"oz","note":"1 tube, browned and drained"},{"item":"frozen home fries","amount":26,"unit":"oz","note":"1 bag, par-cooked"},{"item":"bread","amount":7,"unit":"slices","note":"about 1/3 loaf, cubed"},{"item":"spinach","amount":2,"unit":"cups","note":"approximate; user said 'some'"},{"item":"milk","amount":0.25,"unit":"cup","note":"approximate; 'a bit'"}],"steps":["Heat oven to 350F and grease a 9x13 pan.","Brown the sausage and drain the fat.","Par-cook the home fries (microwave or roast) and cook down the spinach, or blend the spinach into the eggs.","Whisk eggs, egg whites, and milk; season generously.","Layer bread cubes, home fries, and sausage in the pan, pour the egg mix over, top with cheddar, and let it soak 5-10 min.","Bake until the center barely jiggles, about 45-55 min. Rest 10 min, then cut into 6."],"macros_per_serving":{"kcal":720,"protein_g":48,"carbs_g":43,"fat_g":41}},
+            {"name":"Buffalo Tuna Quesadilla","servings":1,"ingredients":[{"item":"canned tuna","amount":1,"unit":"can (5 oz)"},{"item":"Greek yogurt","amount":0.5,"unit":"cup"},{"item":"blue cheese dressing","amount":1,"unit":"tbsp","note":"approximate; 'a bit'"},{"item":"buffalo sauce","amount":1,"unit":"tbsp","note":"to taste"},{"item":"medium flour tortillas","amount":2,"unit":"tortillas"},{"item":"butter","amount":1,"unit":"tbsp","note":"for toasting"}],"steps":["Drain the tuna and mix with Greek yogurt, blue cheese dressing, and buffalo sauce.","Spread onto the tortillas and fold.","Lightly butter the outsides and toast in a pan over medium heat until golden on both sides."],"macros_per_serving":{"kcal":650,"protein_g":47,"carbs_g":52,"fat_g":30}}
+        ];
+        
+        // Recipe functions
+        function getRecipes() {
+            const stored = localStorage.getItem('fitness_recipes');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function saveRecipe(recipe) {
+            const recipes = getRecipes();
+            if (!recipe.id) recipe.id = 'r_' + Date.now();
+            const index = recipes.findIndex(r => r.id === recipe.id);
+            if (index >= 0) recipes[index] = recipe;
+            else recipes.push(recipe);
+            localStorage.setItem('fitness_recipes', JSON.stringify(recipes));
+            return recipe;
+        }
+        
+        function deleteRecipe(id) {
+            const recipes = getRecipes().filter(r => r.id !== id);
+            localStorage.setItem('fitness_recipes', JSON.stringify(recipes));
+        }
+        
+        // Schedule functions (day of week 0-6, slot like "Meal 1", "Meal 2", "Shake", or custom time)
+        function getSchedule() {
+            const stored = localStorage.getItem('fitness_schedule');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function scheduleRecipe(recipeId, days, slot) {
+            const schedule = getSchedule();
+            days.forEach(day => {
+                schedule.push({ recipeId, day, slot, id: 's_' + Date.now() + '_' + day });
+            });
+            localStorage.setItem('fitness_schedule', JSON.stringify(schedule));
+        }
+        
+        function removeSchedule(scheduleId) {
+            const schedule = getSchedule().filter(s => s.id !== scheduleId);
+            localStorage.setItem('fitness_schedule', JSON.stringify(schedule));
+        }
+        
+        // Tracking (meals eaten per date)
+        function getTracking(date) {
+            const key = 'fitness_tracking_' + date;
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function toggleMealEaten(date, scheduleId) {
+            const key = 'fitness_tracking_' + date;
+            const tracking = getTracking(date);
+            const index = tracking.indexOf(scheduleId);
+            if (index >= 0) tracking.splice(index, 1);
+            else tracking.push(scheduleId);
+            localStorage.setItem(key, JSON.stringify(tracking));
+        }
+        
+        // Workout functions
+        function getWorkouts() {
+            const stored = localStorage.getItem('fitness_workouts');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function saveWorkout(workout) {
+            const workouts = getWorkouts();
+            if (!workout.id) workout.id = 'w_' + Date.now();
+            const index = workouts.findIndex(w => w.id === workout.id);
+            if (index >= 0) workouts[index] = workout;
+            else workouts.push(workout);
+            localStorage.setItem('fitness_workouts', JSON.stringify(workouts));
+            return workout;
+        }
+        
+        function deleteWorkout(id) {
+            const workouts = getWorkouts().filter(w => w.id !== id);
+            localStorage.setItem('fitness_workouts', JSON.stringify(workouts));
+            // Clear today's workout if it was deleted
+            if (getTodaysWorkout() === id) {
+                localStorage.removeItem('fitness_todays_workout');
+            }
+        }
+        
+        // Today's workout selection
+        function getTodaysWorkout() {
+            return localStorage.getItem('fitness_todays_workout');
+        }
+        
+        function setTodaysWorkout(workoutId) {
+            localStorage.setItem('fitness_todays_workout', workoutId);
+        }
+        
+        // Calculate workout stats (block count, estimated duration)
+        function calculateWorkoutStats(workout) {
+            const blocks = workout.blocks || [];
+            const blockCount = blocks.length;
+            
+            let totalTime = 0;
+            blocks.forEach(block => {
+                const rounds = block.rounds || 1;
+                const items = block.items || [];
+                const itemCount = items.length;
+                
+                items.forEach(item => {
+                    totalTime += (item.duration || 30) * rounds; // Default 30s per item if no duration
+                });
+                
+                // Add rest between sets within block
+                const restsInBlock = (itemCount * rounds - 1);
+                totalTime += restsInBlock * (workout.restBetweenSets || 60);
+            });
+            
+            // Add rest between blocks
+            if (blockCount > 1) {
+                totalTime += (blockCount - 1) * (workout.restBetweenBlocks || 120);
+            }
+            
+            return {
+                blockCount,
+                estimatedDuration: Math.ceil(totalTime / 60) // in minutes
+            };
+        }
+        
+        // Migrate old workout format to new block-based format
+        function migrateWorkoutsToBlocks() {
+            if (localStorage.getItem('fitness_workout_migration_blocks')) return;
+            
+            const workouts = getWorkouts();
+            let migrated = false;
+            
+            workouts.forEach(workout => {
+                // Check if this workout uses old format (has exercises array instead of blocks)
+                if (workout.exercises && !workout.blocks) {
+                    migrated = true;
+                    console.log(`Migrating workout: ${workout.name}`);
+                    
+                    // Convert exercises to a single block with all items
+                    const items = workout.exercises.map(ex => ({
+                        exercise: ex.name,
+                        reps: ex.reps || null,
+                        duration: null // Old format didn't have duration
+                    }));
+                    
+                    workout.blocks = [{
+                        name: null,
+                        rounds: workout.exercises[0]?.sets || 1,
+                        items: items
+                    }];
+                    
+                    // Set rest periods from first exercise or defaults
+                    workout.restBetweenSets = workout.exercises[0]?.rest || 60;
+                    workout.restBetweenBlocks = 120;
+                    
+                    // Remove old fields
+                    delete workout.exercises;
+                    
+                    saveWorkout(workout);
+                }
+            });
+            
+            localStorage.setItem('fitness_workout_migration_blocks', 'true');
+            if (migrated) console.log('Workout migration to blocks complete');
+        }
+        
+        // Seed data on first run
+        function seedData() {
+            if (localStorage.getItem('fitness_seeded')) return;
+            
+            // Seed recipes
+            SEED_RECIPES.forEach(recipe => {
+                recipe.id = 'r_seed_' + Date.now() + '_' + Math.random();
+                recipe.tags = recipe.tags || [];
+                saveRecipe(recipe);
+            });
+            
+            // Seed sample workout with new block format
+            const sampleWorkout = {
+                name: 'Sample Push Day',
+                isSample: true,
+                restBetweenSets: 90,
+                restBetweenBlocks: 120,
+                blocks: [
+                    {
+                        name: 'Compound Lifts',
+                        rounds: 4,
+                        items: [
+                            { exercise: 'Bench Press', reps: 8, duration: null },
+                            { exercise: 'Overhead Press', reps: 10, duration: null }
+                        ]
+                    },
+                    {
+                        name: 'Accessories',
+                        rounds: 3,
+                        items: [
+                            { exercise: 'Tricep Dips', reps: 12, duration: null },
+                            { exercise: 'Lateral Raises', reps: 15, duration: null }
+                        ]
+                    }
+                ]
+            };
+            saveWorkout(sampleWorkout);
+            
+            localStorage.setItem('fitness_seeded', 'true');
+        }
+        
+        // One-time migration: fix macros for seed recipes (in case any installs have incorrect cached values)
+        function migrateSeedRecipeMacros() {
+            if (localStorage.getItem('fitness_macro_migration_v1')) return;
+            
+            const recipes = getRecipes();
+            let updated = false;
+            
+            recipes.forEach(recipe => {
+                // Update Egg Casserole macros if servings match (6) and name matches
+                if (recipe.name === 'Egg Casserole' && recipe.servings === 6) {
+                    const correctMacros = { kcal: 720, protein_g: 48, carbs_g: 43, fat_g: 41 };
+                    if (JSON.stringify(recipe.macros_per_serving) !== JSON.stringify(correctMacros)) {
+                        recipe.macros_per_serving = correctMacros;
+                        saveRecipe(recipe);
+                        updated = true;
+                        console.log('Migrated Egg Casserole macros to correct values');
+                    }
+                }
+                
+                // Update Buffalo Tuna Quesadilla macros if servings match (1) and name matches
+                if (recipe.name === 'Buffalo Tuna Quesadilla' && recipe.servings === 1) {
+                    const correctMacros = { kcal: 650, protein_g: 47, carbs_g: 52, fat_g: 30 };
+                    if (JSON.stringify(recipe.macros_per_serving) !== JSON.stringify(correctMacros)) {
+                        recipe.macros_per_serving = correctMacros;
+                        saveRecipe(recipe);
+                        updated = true;
+                        console.log('Migrated Buffalo Tuna Quesadilla macros to correct values');
+                    }
+                }
+            });
+            
+            localStorage.setItem('fitness_macro_migration_v1', 'true');
+            if (updated) console.log('Macro migration complete');
+        }
+        
+        let currentTab = null; // Start as null so first switchTab always runs
+        let currentPage = 0;
+        let pageTitleElements = {};
+        let pageTitlePositions = {}; // Cache positions to avoid layout reads
+        let animationFrameId = null;
+        let navCenterX = 0; // Cache nav center
+        
+        const tabIndexMap = {
+            'meal-plan': 0,
+            'workouts': 1,
+            'schedule': 2,
+            'settings': 3
+        };
+        
+        function switchTab(tabName, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            if (currentTab === tabName) return;
+            
+            currentTab = tabName;
+            currentPage = 0;
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabName)?.classList.add('active');
+            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
+            
+            // Update tab bar indicator
+            const tabBar = document.querySelector('.tab-bar');
+            tabBar.setAttribute('data-active', tabIndexMap[tabName]);
+            
+            const config = tabConfig[tabName];
+            document.getElementById('appTitle').textContent = config.title;
+            
+            updatePageNavigation();
+            
+            // Reset carousel scroll position - use double rAF to ensure layout is complete
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const carousel = document.querySelector(`#${tabName} .page-carousel`);
+                    if (carousel) {
+                        // Force layout recalc
+                        carousel.offsetWidth;
+                        carousel.scrollLeft = 0;
+                    }
+                });
+            });
+            
+            history.replaceState(null, '', '#' + tabName);
+        }
+        
+        
+        function updatePageNavigation() {
+            const config = tabConfig[currentTab];
+            const pageNav = document.getElementById('pageNav');
+            const titlesRow = document.getElementById('pageTitlesRow');
+            
+            if (!pageNav || !titlesRow) {
+                console.error('Page nav elements not found');
+                return;
+            }
+            
+            if (config.pages.length === 0) {
+                pageNav.style.display = 'none';
+                return;
+            }
+            
+            pageNav.style.display = 'flex';
+            titlesRow.innerHTML = '';
+            pageTitleElements = {};
+            pageTitlePositions = {};
+            
+            // Create all page titles with separators
+            config.pages.forEach((pageName, index) => {
+                const titleEl = document.createElement('div');
+                titleEl.className = 'page-title-item';
+                titleEl.textContent = pageName;
+                titleEl.style.opacity = index === currentPage ? '1' : '0.35';
+                titleEl.onclick = () => jumpToPage(index);
+                
+                titlesRow.appendChild(titleEl);
+                pageTitleElements[index] = titleEl;
+                
+                // Add separator (middle dot) if not last item
+                if (index < config.pages.length - 1) {
+                    const separator = document.createElement('div');
+                    separator.className = 'page-title-separator';
+                    separator.textContent = '·';
+                    titlesRow.appendChild(separator);
+                }
+            });
+            
+            // Cache positions and widths (one layout read batch)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    navCenterX = pageNav.offsetWidth / 2;
+                    
+                    config.pages.forEach((pageName, index) => {
+                        const el = pageTitleElements[index];
+                        if (el) {
+                            pageTitlePositions[index] = {
+                                left: el.offsetLeft,
+                                width: el.offsetWidth,
+                                centerX: el.offsetLeft + el.offsetWidth / 2
+                            };
+                        }
+                    });
+                    
+                    // Initial centering
+                    updateTitlePositionAndOpacity(0, config.pages.length);
+                });
+            });
+        }
+        
+        function updateTitlePositionAndOpacity(exactPage, totalPages) {
+            const titlesRow = document.getElementById('pageTitlesRow');
+            if (!titlesRow) return;
+            
+            const fromPage = Math.floor(exactPage);
+            const toPage = Math.ceil(exactPage);
+            const progress = exactPage - fromPage;
+            
+            // Update opacities based on exact page position
+            Object.keys(pageTitleElements).forEach(key => {
+                const index = parseInt(key);
+                const el = pageTitleElements[index];
+                
+                let opacity;
+                if (index === fromPage && index === toPage) {
+                    // Exactly on a page
+                    opacity = 1;
+                } else if (index === fromPage) {
+                    // Transitioning away from this page
+                    opacity = 1 - (progress * 0.65);
+                } else if (index === toPage) {
+                    // Transitioning to this page
+                    opacity = 0.35 + (progress * 0.65);
+                } else {
+                    opacity = 0.35;
+                }
+                
+                el.style.opacity = opacity.toString();
+            });
+            
+            // Calculate centered position from cached positions
+            const fromPos = pageTitlePositions[fromPage];
+            const toPos = pageTitlePositions[toPage];
+            
+            if (!fromPos || !toPos) return;
+            
+            // Interpolate center position
+            const currentCenterX = fromPos.centerX + (toPos.centerX - fromPos.centerX) * progress;
+            const translateX = navCenterX - currentCenterX;
+            
+            // Apply transform directly (no transition)
+            titlesRow.style.transform = `translateX(${translateX}px)`;
+        }
+        
+        function jumpToPage(pageIndex) {
+            const config = tabConfig[currentTab];
+            if (pageIndex < 0 || pageIndex >= config.pages.length) return;
+            
+            currentPage = pageIndex;
+            const carousel = document.querySelector(`#${currentTab} .page-carousel`);
+            if (carousel) {
+                carousel.scrollLeft = currentPage * carousel.offsetWidth;
+            }
+            // Position and opacity will update via scroll handler
+        }
+        
+        
+        
+        function setupCarousels() {
+            document.querySelectorAll('.page-carousel').forEach(carousel => {
+                carousel.addEventListener('scroll', () => {
+                    // Only process scroll for the active tab's carousel
+                    const isActive = carousel.closest('.tab-content')?.classList.contains('active');
+                    if (!isActive) return;
+                    
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    
+                    animationFrameId = requestAnimationFrame(() => {
+                        // Single layout read
+                        const pageWidth = carousel.offsetWidth;
+                        if (pageWidth === 0) return;
+                        
+                        const scrollLeft = carousel.scrollLeft;
+                        const exactPage = scrollLeft / pageWidth;
+                        const config = tabConfig[currentTab];
+                        
+                        // Update current page when snapped
+                        const newPage = Math.round(exactPage);
+                        if (newPage !== currentPage && newPage >= 0 && newPage < config.pages.length) {
+                            currentPage = newPage;
+                        }
+                        
+                        // Update position and opacity from exact scroll position (no transitions)
+                        updateTitlePositionAndOpacity(exactPage, config.pages.length);
+                    });
+                }, { passive: true });
+            });
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', e => {
+            const config = tabConfig[currentTab];
+            if (e.key === 'ArrowLeft' && currentPage > 0) {
+                jumpToPage(currentPage - 1);
+            } else if (e.key === 'ArrowRight' && currentPage < config.pages.length - 1) {
+                jumpToPage(currentPage + 1);
+            }
+        });
+        
+        // Custom Icon Management
+        function uploadIcon(tabName, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                localStorage.setItem(`icon-${tabName}`, dataUrl);
+                updateIcon(tabName, dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function resetIcon(tabName) {
+            localStorage.removeItem(`icon-${tabName}`);
+            updateIcon(tabName, null);
+        }
+        
+        function updateIcon(tabName, dataUrl) {
+            const iconId = tabName === 'meal-plan' ? 'mealPlanIcon' : tabName + 'Icon';
+            const previewId = tabName === 'meal-plan' ? 'mealPlanPreview' : tabName + 'Preview';
+            const iconContainer = document.getElementById(iconId);
+            const preview = document.getElementById(previewId);
+            
+            const svgMap = {
+                'meal-plan': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
+                'workouts': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 3-1 1-4 4-3-3-4 4-3-3-4 4-1 1"/><circle cx="16" cy="8" r="2"/></svg>',
+                'schedule': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>',
+                'settings': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
+            };
+            
+            if (dataUrl) {
+                iconContainer.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
+                preview.innerHTML = `<img src="${dataUrl}" alt="${tabName}" />`;
+            } else {
+                iconContainer.innerHTML = svgMap[tabName];
+                preview.innerHTML = svgMap[tabName];
+            }
+        }
+        
+        function loadCustomIcons() {
+            ['meal-plan', 'workouts', 'schedule', 'settings'].forEach(tabName => {
+                const dataUrl = localStorage.getItem(`icon-${tabName}`);
+                if (dataUrl) updateIcon(tabName, dataUrl);
+            });
+        }
+        
+        // ===== WORKOUT SESSION =====
+        
+        let sessionState = {
+            workout: null,
+            sequence: [], // Expanded sequence of all items and rests
+            currentIndex: 0,
+            isPaused: false,
+            timerInterval: null,
+            remaining: 0, // Current item countdown
+            totalRemaining: 0 // Total workout countdown
+        };
+        
+        function startWorkoutSession(workoutId) {
+            const workout = getWorkouts().find(w => w.id === workoutId);
+            if (!workout || !workout.blocks || workout.blocks.length === 0) return;
+            
+            // Expand blocks into sequence
+            const sequence = [];
+            workout.blocks.forEach((block, blockIdx) => {
+                for (let round = 1; round <= (block.rounds || 1); round++) {
+                    block.items.forEach((item, itemIdx) => {
+                        sequence.push({
+                            type: 'item',
+                            blockName: block.name || `Block ${blockIdx + 1}`,
+                            blockIdx,
+                            round,
+                            totalRounds: block.rounds,
+                            exercise: item.exercise,
+                            reps: item.reps,
+                            duration: item.duration || 30
+                        });
+                        
+                        // Add rest after item (except last item of last round of last block)
+                        const isLastItemOfRound = itemIdx === block.items.length - 1;
+                        const isLastRound = round === block.rounds;
+                        const isLastBlock = blockIdx === workout.blocks.length - 1;
+                        
+                        if (!isLastItemOfRound || !isLastRound || !isLastBlock) {
+                            const restDuration = (isLastItemOfRound && !isLastRound) || (isLastRound && !isLastBlock) 
+                                ? (isLastBlock ? workout.restBetweenSets : workout.restBetweenBlocks)
+                                : workout.restBetweenSets;
+                            
+                            sequence.push({
+                                type: 'rest',
+                                duration: restDuration || 60
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Calculate total time
+            const totalTime = sequence.reduce((sum, item) => sum + item.duration, 0);
+            
+            sessionState = {
+                workout,
+                sequence,
+                currentIndex: 0,
+                isPaused: false,
+                timerInterval: null,
+                remaining: sequence[0]?.duration || 0,
+                totalRemaining: totalTime
+            };
+            
+            document.getElementById('workoutSession').classList.add('active');
+            document.getElementById('sessionTitle').textContent = workout.name;
+            
+            // Hide tab bar, show master timer
+            document.querySelector('.tab-bar').classList.add('hidden');
+            document.getElementById('masterTimerBar').classList.add('active');
+            
+            renderWorkoutSession();
+            startSessionTimer();
+            vibrate(50);
+        }
+        
+        function exitWorkoutSession() {
+            if (sessionState.currentIndex > 0) {
+                showHudConfirm(
+                    'Exit Workout?',
+                    'Progress will be lost.',
+                    () => {
+                        document.getElementById('workoutSession').classList.remove('active');
+                        document.querySelector('.tab-bar').classList.remove('hidden');
+                        document.getElementById('masterTimerBar').classList.remove('active');
+                        
+                        if (sessionState.timerInterval) {
+                            clearInterval(sessionState.timerInterval);
+                        }
+                        sessionState = {};
+                    }
+                );
+                return;
+            }
+            
+            document.getElementById('workoutSession').classList.remove('active');
+            document.querySelector('.tab-bar').classList.remove('hidden');
+            document.getElementById('masterTimerBar').classList.remove('active');
+            
+            if (sessionState.timerInterval) {
+                clearInterval(sessionState.timerInterval);
+            }
+            sessionState = {};
+        }
+        
+        function renderWorkoutSession() {
+            const content = document.getElementById('sessionContent');
+            const current = sessionState.sequence[sessionState.currentIndex];
+            
+            if (!current) {
+                renderFinishScreen();
+                return;
+            }
+            
+            const cards = sessionState.sequence.map((item, idx) => {
+                const isActive = idx === sessionState.currentIndex;
+                const isCompleted = idx < sessionState.currentIndex;
+                const isUpcoming = idx > sessionState.currentIndex;
+                
+                const cardId = `session-card-${idx}`;
+                
+                if (item.type === 'item') {
+                    return `
+                        <div id="${cardId}" class="card ${isCompleted ? 'session-card-completed' : ''} ${isActive ? 'session-card-active' : ''}" style="
+                            margin-bottom: 12px;
+                            opacity: ${isCompleted ? 0.4 : isUpcoming ? 0.6 : 1};
+                            ${isActive ? 'border-color: var(--color-accent-cyan); box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);' : ''}
+                            transition: opacity 0.3s ease, border-color 0.3s ease;
+                            position: relative;
+                        ">
+                            ${isActive ? `<div class="session-progress-fill" style="
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                height: 4px;
+                                background: var(--color-accent-cyan);
+                                width: 0%;
+                                transition: width 1s linear;
+                            "></div>` : ''}
+                            <div class="card-header">
+                                <h2 class="card-title" style="font-size: 16px;">${item.exercise}</h2>
+                                <span class="card-badge">${item.blockName} R${item.round}/${item.totalRounds}</span>
+                            </div>
+                            <div class="card-content">
+                                ${item.reps ? `<p style="opacity: 0.7;">Target: ${item.reps} reps</p>` : ''}
+                                ${isActive ? `
+                                    <div style="font-size: 32px; font-weight: 600; color: var(--color-accent-cyan); text-align: center; padding: 20px 0;">
+                                        ${formatTime(sessionState.remaining)}
+                                    </div>
+                                    ${!item.reps ? '<button class="session-btn session-btn-primary" onclick="completeCurrentItem()" style="width: 100%;">Complete</button>' : 
+                                        '<button class="session-btn session-btn-primary" onclick="completeCurrentItem()" style="width: 100%;">Done (${item.reps} reps)</button>'}
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div id="${cardId}" class="card ${isCompleted ? 'session-card-completed' : ''} ${isActive ? 'session-card-active' : ''}" style="
+                            margin-bottom: 12px;
+                            opacity: ${isCompleted ? 0.4 : isUpcoming ? 0.6 : 1};
+                            background: var(--color-bg-navy);
+                            ${isActive ? 'border-color: var(--color-accent-cyan);' : ''}
+                            transition: opacity 0.3s ease, border-color 0.3s ease;
+                            position: relative;
+                        ">
+                            ${isActive ? `<div class="session-progress-fill" style="
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                height: 4px;
+                                background: var(--color-accent-cyan);
+                                width: 0%;
+                                transition: width 1s linear;
+                            "></div>` : ''}
+                            <div class="card-content">
+                                <p style="text-align: center; opacity: 0.7; margin-bottom: 8px;">Rest Period</p>
+                                ${isActive ? `
+                                    <div style="font-size: 32px; font-weight: 600; color: var(--color-accent-cyan); text-align: center; padding: 20px 0;">
+                                        ${formatTime(sessionState.remaining)}
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                                        <button class="rest-btn" onclick="adjustCurrentRest(-10)">-10s</button>
+                                        <button class="session-btn" onclick="skipCurrentItem()" style="flex: 1;">Skip Rest</button>
+                                        <button class="rest-btn" onclick="adjustCurrentRest(10)">+10s</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            content.innerHTML = `<div style="padding: 20px;">${cards}</div>`;
+            
+            // Scroll active card into view
+            setTimeout(() => {
+                const activeCard = document.getElementById(`session-card-${sessionState.currentIndex}`);
+                if (activeCard) {
+                    activeCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+        
+        function startSessionTimer() {
+            sessionState.timerInterval = setInterval(() => {
+                if (sessionState.isPaused) return;
+                
+                sessionState.remaining--;
+                sessionState.totalRemaining--;
+                
+                updateMasterTimer();
+                
+                // Update active card countdown
+                const content = document.getElementById('sessionContent');
+                const activeCountdown = content.querySelector('.session-card-active div[style*="font-size: 32px"]');
+                if (activeCountdown) {
+                    activeCountdown.textContent = formatTime(sessionState.remaining);
+                }
+                
+                // Update progress fill
+                const progressFill = content.querySelector('.session-card-active .session-progress-fill');
+                if (progressFill) {
+                    const current = sessionState.sequence[sessionState.currentIndex];
+                    const totalDuration = current.duration;
+                    const elapsed = totalDuration - sessionState.remaining;
+                    const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                    progressFill.style.width = progress + '%';
+                }
+                
+                // Auto-advance when countdown hits 0
+                if (sessionState.remaining <= 0) {
+                    const current = sessionState.sequence[sessionState.currentIndex];
+                    if (current.type === 'rest' || !current.reps) {
+                        completeCurrentItem();
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateMasterTimer() {
+            const timeEl = document.getElementById('masterTimerTime');
+            if (timeEl) {
+                timeEl.textContent = formatTime(sessionState.totalRemaining);
+            }
+        }
+        
+        function formatTime(seconds) {
+            if (seconds <= 0) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        
+        function completeCurrentItem() {
+            vibrate(50);
+            
+            // Flash the completed card
+            const completedCard = document.getElementById(`session-card-${sessionState.currentIndex}`);
+            if (completedCard) {
+                completedCard.classList.add('session-card-completed');
+            }
+            
+            sessionState.currentIndex++;
+            
+            if (sessionState.currentIndex >= sessionState.sequence.length) {
+                // Delay to show completion animation
+                setTimeout(() => renderFinishScreen(), 300);
+            } else {
+                sessionState.remaining = sessionState.sequence[sessionState.currentIndex].duration;
+                // Delay to show completion animation, then scroll to next
+                setTimeout(() => renderWorkoutSession(), 300);
+            }
+        }
+        
+        function skipCurrentItem() {
+            completeCurrentItem();
+        }
+        
+        function adjustCurrentRest(delta) {
+            const current = sessionState.sequence[sessionState.currentIndex];
+            if (current.type !== 'rest') return;
+            
+            current.duration = Math.max(5, current.duration + delta);
+            sessionState.remaining = Math.max(1, sessionState.remaining + delta);
+            sessionState.totalRemaining += delta;
+            
+            // Update master rest values
+            if (delta > 0) {
+                sessionState.workout.restBetweenSets += delta;
+                sessionState.workout.restBetweenBlocks += delta;
+            }
+            
+            renderWorkoutSession();
+            updateMasterTimer();
+            vibrate(30);
+        }
+        
+        function toggleWorkoutPause() {
+            sessionState.isPaused = !sessionState.isPaused;
+            document.getElementById('masterPauseBtn').textContent = sessionState.isPaused ? 'Resume' : 'Pause';
+            vibrate(30);
+        }
+        
+        function renderFinishScreen() {
+            if (sessionState.timerInterval) {
+                clearInterval(sessionState.timerInterval);
+            }
+            
+            document.querySelector('.tab-bar').classList.remove('hidden');
+            document.getElementById('masterTimerBar').classList.remove('active');
+            
+            const completedItems = sessionState.sequence.filter(s => s.type === 'item').length;
+            const content = document.getElementById('sessionContent');
+            
+            content.innerHTML = `
+                <div class="finish-screen">
+                    <div class="finish-title">Workout Complete!</div>
+                    <div class="finish-stats">
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Items Completed</div>
+                            <div class="finish-stat-value">${completedItems}</div>
+                        </div>
+                        <div class="finish-stat">
+                            <div class="finish-stat-label">Blocks</div>
+                            <div class="finish-stat-value">${sessionState.workout.blocks?.length || 0}</div>
+                        </div>
+                    </div>
+                    <button class="session-btn session-btn-primary" onclick="exitWorkoutSession()" style="margin-top: 32px; width: 200px;">Done</button>
+                </div>
+            `;
+            
+            vibrate([100, 100, 100, 100, 100]);
+        }
+        
+        // ===== HUD DIALOG SYSTEM =====
+        
+        function showHudDialog(title, message, actions) {
+            const overlay = document.getElementById('hudOverlay');
+            const titleEl = document.getElementById('hudTitle');
+            const messageEl = document.getElementById('hudMessage');
+            const actionsEl = document.getElementById('hudActions');
+            
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            actionsEl.innerHTML = '';
+            
+            actions.forEach(action => {
+                const btn = document.createElement('button');
+                btn.className = `hud-action-btn ${action.class || ''}`;
+                btn.textContent = action.text;
+                btn.onclick = () => {
+                    closeHudDialog();
+                    if (action.handler) action.handler();
+                };
+                actionsEl.appendChild(btn);
+            });
+            
+            overlay.classList.add('active');
+            vibrate(30);
+        }
+        
+        function closeHudDialog() {
+            document.getElementById('hudOverlay').classList.remove('active');
+        }
+        
+        function showHudConfirm(title, message, onConfirm, onCancel) {
+            showHudDialog(title, message, [
+                { text: 'Cancel', handler: onCancel },
+                { text: 'Confirm', class: 'primary', handler: onConfirm }
+            ]);
+        }
+        
+        function showHudAlert(title, message, onOk) {
+            showHudDialog(title, message, [
+                { text: 'OK', class: 'primary', handler: onOk }
+            ]);
+        }
+        
+        function showHudPrompt(title, message, defaultValue, onSubmit, onCancel) {
+            const overlay = document.getElementById('hudOverlay');
+            const titleEl = document.getElementById('hudTitle');
+            const messageEl = document.getElementById('hudMessage');
+            const actionsEl = document.getElementById('hudActions');
+            
+            titleEl.textContent = title;
+            messageEl.innerHTML = `
+                <p style="margin-bottom: 12px;">${message}</p>
+                <input type="text" id="hudPromptInput" value="${defaultValue || ''}" 
+                    style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+            `;
+            actionsEl.innerHTML = '';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'hud-action-btn';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+                closeHudDialog();
+                if (onCancel) onCancel();
+            };
+            actionsEl.appendChild(cancelBtn);
+            
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'hud-action-btn primary';
+            submitBtn.textContent = 'OK';
+            submitBtn.onclick = () => {
+                const value = document.getElementById('hudPromptInput').value;
+                closeHudDialog();
+                if (onSubmit) onSubmit(value);
+            };
+            actionsEl.appendChild(submitBtn);
+            
+            overlay.classList.add('active');
+            setTimeout(() => document.getElementById('hudPromptInput')?.focus(), 100);
+            vibrate(30);
+        }
+        
+        function vibrate(pattern) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+        
+        // ===== MEAL BUILDER FORM =====
+        
+        let editingRecipeId = null;
+        
+        function renderMealBuilder() {
+            const builderPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(2) .content');
+            if (!builderPage) return;
+            
+            const recipe = editingRecipeId ? getRecipes().find(r => r.id === editingRecipeId) : null;
+            
+            builderPage.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${recipe ? 'Edit' : 'Create'} Recipe</h2>
+                    </div>
+                    <div class="card-content">
+                        <input type="text" id="recipeName" placeholder="Recipe Name" value="${recipe?.name || ''}" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                        
+                        <input type="number" id="recipeServings" placeholder="Servings" value="${recipe?.servings || 1}" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                        
+                        <textarea id="recipeNote" placeholder="Note (optional)" 
+                            style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; min-height: 60px;">${recipe?.note || ''}</textarea>
+                        
+                        <div style="margin: 16px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong>Ingredients</strong>
+                                <button class="rest-btn" onclick="addIngredientRow()">+</button>
+                            </div>
+                            <div id="ingredientsList"></div>
+                        </div>
+                        
+                        <div style="margin: 16px 0;">
+                            <strong>Steps</strong>
+                            <textarea id="recipeSteps" placeholder="Enter each step on a new line" 
+                                style="width: 100%; padding: 12px; margin-top: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; min-height: 120px;">${recipe?.steps?.join('\\n') || ''}</textarea>
+                        </div>
+                        
+                        <div style="margin: 16px 0;">
+                            <strong>Macros per Serving (Estimated)</strong>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                                <input type="number" id="macroKcal" placeholder="Calories" value="${recipe?.macros_per_serving?.kcal || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroProtein" placeholder="Protein (g)" value="${recipe?.macros_per_serving?.protein_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroCarbs" placeholder="Carbs (g)" value="${recipe?.macros_per_serving?.carbs_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                                <input type="number" id="macroFat" placeholder="Fat (g)" value="${recipe?.macros_per_serving?.fat_g || ''}" 
+                                    style="padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px;">
+                            </div>
+                        </div>
+                        
+                        <button class="session-btn session-btn-primary" style="width: 100%; margin-top: 16px;" onclick="saveMealBuilderRecipe()">Save Recipe</button>
+                        ${recipe ? '<button class="session-btn" style="width: 100%; margin-top: 8px;" onclick="cancelEditRecipe()">Cancel</button>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Populate ingredients
+            if (recipe?.ingredients) {
+                recipe.ingredients.forEach(ing => addIngredientRow(ing));
+            } else {
+                addIngredientRow();
+            }
+        }
+        
+        function addIngredientRow(ingredient = null) {
+            const list = document.getElementById('ingredientsList');
+            if (!list) return;
+            
+            const row = document.createElement('div');
+            row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 4px; margin-bottom: 4px;';
+            row.innerHTML = `
+                <input type="text" placeholder="Item" value="${ingredient?.item || ''}" class="ing-item"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <input type="number" step="0.01" placeholder="Amount" value="${ingredient?.amount || ''}" class="ing-amount"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <input type="text" placeholder="Unit" value="${ingredient?.unit || ''}" class="ing-unit"
+                    style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px;">
+                <button class="rest-btn" onclick="this.parentElement.remove()" style="width: 40px;">×</button>
+            `;
+            
+            if (ingredient?.note) {
+                const noteRow = document.createElement('div');
+                noteRow.style.cssText = 'grid-column: 1 / -1; margin-bottom: 8px;';
+                noteRow.innerHTML = `
+                    <input type="text" placeholder="Note (optional)" value="${ingredient.note}" class="ing-note"
+                        style="width: 100%; padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 13px; opacity: 0.7;">
+                `;
+                row.appendChild(noteRow);
+            }
+            
+            list.appendChild(row);
+        }
+        
+        function saveMealBuilderRecipe() {
+            const name = document.getElementById('recipeName').value.trim();
+            if (!name) {
+                showHudAlert('Missing Information', 'Recipe name is required');
+                return;
+            }
+            
+            const ingredients = [];
+            document.querySelectorAll('#ingredientsList > div').forEach(row => {
+                const item = row.querySelector('.ing-item')?.value.trim();
+                const amount = parseFloat(row.querySelector('.ing-amount')?.value) || 0;
+                const unit = row.querySelector('.ing-unit')?.value.trim();
+                const note = row.querySelector('.ing-note')?.value.trim();
+                
+                if (item) {
+                    const ing = { item, amount, unit };
+                    if (note) ing.note = note;
+                    ingredients.push(ing);
+                }
+            });
+            
+            const steps = document.getElementById('recipeSteps').value.split('\\n').map(s => s.trim()).filter(s => s);
+            
+            const recipe = {
+                id: editingRecipeId,
+                name,
+                servings: parseInt(document.getElementById('recipeServings').value) || 1,
+                note: document.getElementById('recipeNote').value.trim(),
+                ingredients,
+                steps,
+                macros_per_serving: {
+                    kcal: parseInt(document.getElementById('macroKcal').value) || 0,
+                    protein_g: parseInt(document.getElementById('macroProtein').value) || 0,
+                    carbs_g: parseInt(document.getElementById('macroCarbs').value) || 0,
+                    fat_g: parseInt(document.getElementById('macroFat').value) || 0
+                },
+                tags: []
+            };
+            
+            saveRecipe(recipe);
+            editingRecipeId = null;
+            renderMealBuilder();
+            renderMealPlanContent();
+            showHudAlert('Success', 'Recipe saved!');
+        }
+        
+        function editRecipe(id) {
+            editingRecipeId = id;
+            // Switch to Meal Builder page
+            jumpToPage(1); // Page 1 is Meal Builder
+            renderMealBuilder();
+        }
+        
+        function cancelEditRecipe() {
+            editingRecipeId = null;
+            renderMealBuilder();
+        }
+        
+        // ===== WORKOUT BUILDER & LIST =====
+        
+        let editingWorkoutId = null;
+        let expandedWorkoutId = null;
+        
+        function renderWorkoutsPage() {
+            const workoutsPage = document.querySelector('#workouts .page-carousel .page:nth-child(2) .content');
+            if (!workoutsPage) return;
+            
+            const workouts = getWorkouts();
+            
+            workoutsPage.innerHTML = `
+                <button class="session-btn session-btn-primary" style="width: 100%; margin-bottom: 16px;" onclick="openWorkoutEditor(null)">
+                    <span style="margin-right: 8px;">+</span> New Workout
+                </button>
+                
+                ${workouts.length === 0 ? '<div class="card"><p style="opacity: 0.6;">No workouts yet.</p></div>' : ''}
+                
+                ${workouts.map(w => {
+                    const stats = calculateWorkoutStats(w);
+                    const isExpanded = expandedWorkoutId === w.id;
+                    
+                    return `
+                        <div class="card" style="margin-bottom: 12px;">
+                            <div style="cursor: pointer;" onclick="toggleWorkoutExpand('${w.id}')">
+                                <div class="card-header">
+                                    <h2 class="card-title">${w.name}</h2>
+                                    ${w.isSample ? '<span class="card-badge">Sample</span>' : ''}
+                                </div>
+                                <div class="card-content">
+                                    <div style="display: flex; justify-content: space-between; opacity: 0.7; margin-bottom: ${isExpanded ? '12px' : '0'};">
+                                        <span>${stats.blockCount} block${stats.blockCount !== 1 ? 's' : ''}</span>
+                                        <span>~${stats.estimatedDuration} min</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${isExpanded ? `
+                                <div class="card-content" style="border-top: 1px solid rgba(139, 155, 176, 0.1); padding-top: 12px; margin-top: 0;">
+                                    ${(w.blocks || []).map((block, blockIdx) => `
+                                        <div style="margin-bottom: 16px; padding: 12px; background: var(--color-bg-navy); border-left: 2px solid var(--color-accent-cyan);">
+                                            <div style="font-weight: 500; margin-bottom: 8px;">
+                                                ${block.name || `Block ${blockIdx + 1}`} <span style="opacity: 0.6;">(${block.rounds} round${block.rounds !== 1 ? 's' : ''})</span>
+                                            </div>
+                                            ${(block.items || []).map(item => `
+                                                <div style="opacity: 0.7; font-size: 14px; margin-bottom: 4px; padding-left: 8px;">
+                                                    • ${item.exercise}${item.reps ? ` × ${item.reps}` : ''}${item.duration ? ` (${item.duration}s)` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    `).join('')}
+                                    
+                                    <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+                                        <button class="rest-btn" onclick="event.stopPropagation(); openWorkoutMenu('${w.id}')" title="More options">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                                            </svg>
+                                        </button>
+                                        <button class="session-btn session-btn-primary" style="flex: 1;" onclick="event.stopPropagation(); setTodaysWorkout('${w.id}'); renderWorkoutsContent(); showHudAlert('Success', 'Set as today\\'s workout!');">
+                                            Select for Today
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            `;
+        }
+        
+        function toggleWorkoutExpand(id) {
+            expandedWorkoutId = expandedWorkoutId === id ? null : id;
+            renderWorkoutsPage();
+        }
+        
+        function openWorkoutMenu(id) {
+            const workout = getWorkouts().find(w => w.id === id);
+            if (!workout) return;
+            
+            showHudDialog(workout.name, 'Choose an action', [
+                { 
+                    text: 'Edit Workout', 
+                    handler: () => openWorkoutEditor(id) 
+                },
+                { 
+                    text: 'Set as Today\'s Workout', 
+                    handler: () => {
+                        setTodaysWorkout(id);
+                        renderWorkoutsContent();
+                        showHudAlert('Success', 'Set as today\'s workout!');
+                    }
+                },
+                { 
+                    text: 'Delete Workout', 
+                    class: 'danger',
+                    handler: () => {
+                        showHudConfirm(
+                            'Delete Workout?',
+                            `Delete "${workout.name}"? This cannot be undone.`,
+                            () => {
+                                deleteWorkout(id);
+                                renderWorkoutsPage();
+                                renderWorkoutsContent();
+                            }
+                        );
+                    }
+                },
+                { text: 'Cancel' }
+            ]);
+        }
+        
+        function openWorkoutEditor(id) {
+            // Store editor state
+            editingWorkoutId = id;
+            
+            // Show editor overlay (will create below)
+            document.getElementById('workoutEditor').classList.add('active');
+            renderWorkoutEditor();
+        }
+        
+        function closeWorkoutEditor() {
+            editingWorkoutId = null;
+            document.getElementById('workoutEditor').classList.remove('active');
+            renderWorkoutsPage();
+            renderWorkoutsContent();
+        }
+        
+        function renderWorkoutEditor() {
+            const editor = document.getElementById('workoutEditorContent');
+            if (!editor) return;
+            
+            const workout = editingWorkoutId ? getWorkouts().find(w => w.id === editingWorkoutId) : null;
+            const blocks = workout?.blocks || [{ name: null, rounds: 3, items: [{ exercise: '', reps: null, duration: null }] }];
+            const restBetweenSets = workout?.restBetweenSets || 60;
+            const restBetweenBlocks = workout?.restBetweenBlocks || 120;
+            
+            editor.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Workout Name</label>
+                    <input type="text" id="editorWorkoutName" placeholder="Workout Name" value="${workout?.name || ''}" 
+                        style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Rest Between Sets (s)</label>
+                        <input type="number" id="editorRestSets" value="${restBetweenSets}" min="0"
+                            style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 4px; font-size: 14px; opacity: 0.7;">Rest Between Blocks (s)</label>
+                        <input type="number" id="editorRestBlocks" value="${restBetweenBlocks}" min="0"
+                            style="width: 100%; padding: 12px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 15px; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong>Blocks</strong>
+                        <button class="rest-btn" onclick="addEditorBlock()">+ Add Block</button>
+                    </div>
+                    <div id="editorBlocksList"></div>
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button class="session-btn" style="flex: 1;" onclick="closeWorkoutEditor()">Cancel</button>
+                    <button class="session-btn session-btn-primary" style="flex: 1;" onclick="saveWorkoutEditor()">Save Workout</button>
+                </div>
+            `;
+            
+            // Render blocks
+            blocks.forEach((block, idx) => addEditorBlock(block, idx));
+        }
+        
+        function addEditorBlock(block = null, index = null) {
+            const list = document.getElementById('editorBlocksList');
+            if (!list) return;
+            
+            const blockDiv = document.createElement('div');
+            blockDiv.className = 'editor-block';
+            blockDiv.style.cssText = 'background: var(--color-bg-navy); border: 1px solid var(--color-card-border); padding: 12px; margin-bottom: 12px; border-radius: 4px;';
+            
+            const blockData = block || { name: null, rounds: 3, items: [{ exercise: '', reps: null, duration: null }] };
+            
+            blockDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 12px; align-items: center;">
+                    <input type="text" placeholder="Block name (optional)" value="${blockData.name || ''}" class="block-name"
+                        style="padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <input type="number" placeholder="Rounds" value="${blockData.rounds}" min="1" class="block-rounds"
+                        style="width: 80px; padding: 8px; background: var(--color-bg-dark); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <button class="rest-btn" onclick="this.closest('.editor-block').remove()" title="Remove block">×</button>
+                </div>
+                <div class="block-items-list" style="margin-bottom: 8px;"></div>
+                <button class="rest-btn" onclick="addEditorItem(this.closest('.editor-block'))" style="width: 100%; font-size: 13px;">+ Add Exercise</button>
+            `;
+            
+            if (index !== null) {
+                list.appendChild(blockDiv);
+            } else {
+                list.appendChild(blockDiv);
+            }
+            
+            // Add items
+            const itemsList = blockDiv.querySelector('.block-items-list');
+            blockData.items.forEach(item => addEditorItem(blockDiv, item));
+        }
+        
+        function addEditorItem(blockDiv, item = null) {
+            const itemsList = blockDiv.querySelector('.block-items-list');
+            if (!itemsList) return;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'background: var(--color-bg-dark); padding: 8px; margin-bottom: 8px; border-radius: 4px;';
+            
+            const itemData = item || { exercise: '', reps: null, duration: null };
+            
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="Exercise name" value="${itemData.exercise || ''}" class="item-exercise"
+                    style="width: 100%; padding: 8px; margin-bottom: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;">
+                    <input type="number" placeholder="Reps" value="${itemData.reps || ''}" class="item-reps"
+                        style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <input type="number" placeholder="Duration (s)" value="${itemData.duration || ''}" class="item-duration"
+                        style="padding: 8px; background: var(--color-bg-navy); border: 1px solid var(--color-card-border); color: var(--color-text-primary); font-size: 14px; border-radius: 4px;">
+                    <button class="rest-btn" onclick="this.closest('div').closest('div').remove()" title="Remove">×</button>
+                </div>
+            `;
+            
+            itemsList.appendChild(itemDiv);
+        }
+        
+        function saveWorkoutEditor() {
+            const name = document.getElementById('editorWorkoutName').value.trim();
+            if (!name) {
+                showHudAlert('Missing Information', 'Workout name is required');
+                return;
+            }
+            
+            const restBetweenSets = parseInt(document.getElementById('editorRestSets').value) || 60;
+            const restBetweenBlocks = parseInt(document.getElementById('editorRestBlocks').value) || 120;
+            
+            const blocks = [];
+            document.querySelectorAll('.editor-block').forEach(blockDiv => {
+                const blockName = blockDiv.querySelector('.block-name').value.trim() || null;
+                const rounds = parseInt(blockDiv.querySelector('.block-rounds').value) || 1;
+                
+                const items = [];
+                blockDiv.querySelectorAll('.block-items-list > div').forEach(itemDiv => {
+                    const exercise = itemDiv.querySelector('.item-exercise').value.trim();
+                    const reps = parseInt(itemDiv.querySelector('.item-reps').value) || null;
+                    const duration = parseInt(itemDiv.querySelector('.item-duration').value) || null;
+                    
+                    if (exercise) {
+                        items.push({ exercise, reps, duration });
+                    }
+                });
+                
+                if (items.length > 0) {
+                    blocks.push({ name: blockName, rounds, items });
+                }
+            });
+            
+            if (blocks.length === 0) {
+                showHudAlert('Missing Information', 'Add at least one block with exercises');
+                return;
+            }
+            
+            const workout = {
+                id: editingWorkoutId,
+                name,
+                restBetweenSets,
+                restBetweenBlocks,
+                blocks
+            };
+            
+            saveWorkout(workout);
+            closeWorkoutEditor();
+            showHudAlert('Success', 'Workout saved!');
+        }
+        
+        // ===== RENDER FUNCTIONS =====
+        
+        function renderMealPlanContent() {
+            // My Meals page (page 2) with edit/delete/schedule
+            const myMealsPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(3) .content');
+            if (myMealsPage) {
+                const recipes = getRecipes();
+                myMealsPage.innerHTML = recipes.length === 0 
+                    ? '<div class="card"><p style="opacity: 0.6;">No recipes yet. Seeds will load on first run.</p></div>'
+                    : recipes.map(r => `
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">${r.name}</h2>
+                                <span class="card-badge">${r.servings} servings</span>
+                            </div>
+                            <div class="card-content">
+                                ${r.note ? `<p style="opacity: 0.7; font-size: 13px; margin-bottom: 12px;">${r.note}</p>` : ''}
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Calories</span>
+                                    <span class="metric-value">${r.macros_per_serving?.kcal || '?'}</span>
+                                </div>
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Protein</span>
+                                    <span class="metric-value">${r.macros_per_serving?.protein_g || '?'}g</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <button class="session-btn" style="flex: 1;" onclick="editRecipe('${r.id}')">Edit</button>
+                                    <button class="session-btn" style="flex: 1;" onclick="deleteRecipeConfirm('${r.id}', '${r.name.replace(/'/g, "\\'")}')">Delete</button>
+                                    <button class="session-btn session-btn-primary" style="flex: 1;" onclick="scheduleRecipeDialog('${r.id}')">Schedule</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            
+            // Today's Meals page (page 0) with eaten tracking and macro totals
+            const todayPage = document.querySelector('#meal-plan .page-carousel .page:nth-child(1) .content');
+            if (todayPage) {
+                const today = new Date().getDay();
+                const dateKey = new Date().toISOString().split('T')[0];
+                const schedule = getSchedule().filter(s => s.day === today);
+                const eaten = getTracking(dateKey);
+                
+                let totalPlanned = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+                let totalEaten = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+                
+                const mealCards = schedule.map(s => {
+                    const recipe = getRecipes().find(r => r.id === s.recipeId);
+                    if (!recipe) return '';
+                    
+                    const isEaten = eaten.includes(s.id);
+                    const macros = recipe.macros_per_serving || {};
+                    
+                    totalPlanned.kcal += macros.kcal || 0;
+                    totalPlanned.protein += macros.protein_g || 0;
+                    totalPlanned.carbs += macros.carbs_g || 0;
+                    totalPlanned.fat += macros.fat_g || 0;
+                    
+                    if (isEaten) {
+                        totalEaten.kcal += macros.kcal || 0;
+                        totalEaten.protein += macros.protein_g || 0;
+                        totalEaten.carbs += macros.carbs_g || 0;
+                        totalEaten.fat += macros.fat_g || 0;
+                    }
+                    
+                    return `
+                        <div class="card" style="opacity: ${isEaten ? 0.6 : 1};">
+                            <div class="card-header">
+                                <h2 class="card-title">${recipe.name}</h2>
+                                <span class="card-badge">${s.slot}</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Calories</span>
+                                    <span class="metric-value">${macros.kcal || '?'}</span>
+                                </div>
+                                <div class="card-metric">
+                                    <span class="metric-label">Estimated Protein</span>
+                                    <span class="metric-value">${macros.protein_g || '?'}g</span>
+                                </div>
+                                <button class="session-btn ${isEaten ? 'session-btn-primary' : ''}" 
+                                    style="margin-top: 12px; width: 100%;"
+                                    onclick="toggleMealEaten('${dateKey}', '${s.id}'); renderMealPlanContent();">
+                                    ${isEaten ? '✓ Eaten' : 'Mark as Eaten'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                const macroTotalsCard = schedule.length > 0 ? `
+                    <div class="card" style="border-color: var(--color-accent-cyan);">
+                        <div class="card-header">
+                            <h2 class="card-title">Daily Totals (Estimated)</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-metric">
+                                <span class="metric-label">Calories</span>
+                                <span class="metric-value">${Math.round(totalEaten.kcal)} / ${Math.round(totalPlanned.kcal)}</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Protein</span>
+                                <span class="metric-value">${Math.round(totalEaten.protein)}g / ${Math.round(totalPlanned.protein)}g</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Carbs</span>
+                                <span class="metric-value">${Math.round(totalEaten.carbs)}g / ${Math.round(totalPlanned.carbs)}g</span>
+                            </div>
+                            <div class="card-metric">
+                                <span class="metric-label">Fat</span>
+                                <span class="metric-value">${Math.round(totalEaten.fat)}g / ${Math.round(totalPlanned.fat)}g</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : '';
+                
+                todayPage.innerHTML = macroTotalsCard + (mealCards || '<div class="card"><p style="opacity: 0.6;">No meals scheduled for today.</p></div>');
+            }
+        }
+        
+        function deleteRecipeConfirm(id, name) {
+            showHudConfirm(
+                'Delete Recipe?',
+                `Delete "${name}"? This cannot be undone.`,
+                () => {
+                    deleteRecipe(id);
+                    renderMealPlanContent();
+                }
+            );
+        }
+        
+        function scheduleRecipeDialog(recipeId) {
+            const recipe = getRecipes().find(r => r.id === recipeId);
+            if (!recipe) return;
+            
+            showHudPrompt(
+                'Schedule Days',
+                'Enter days (0=Sun, 1=Mon, etc., comma-separated):',
+                '1,2,3,4,5',
+                (days) => {
+                    if (!days) return;
+                    showHudPrompt(
+                        'Meal Slot',
+                        'Enter meal slot:',
+                        'Meal 1',
+                        (slot) => {
+                            if (!slot) return;
+                            const dayList = days.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+                            if (dayList.length > 0) {
+                                scheduleRecipe(recipeId, dayList, slot);
+                                showHudAlert('Success', `Scheduled ${recipe.name} for ${dayList.length} day(s)`);
+                                renderMealPlanContent();
+                            }
+                        }
+                    );
+                }
+            );
+        }
+        
+        function renderWorkoutsContent() {
+            // Today's Workout page (page 0)
+            const todayWorkoutPage = document.querySelector('#workouts .page-carousel .page:nth-child(1) .content');
+            if (todayWorkoutPage) {
+                const todayId = getTodaysWorkout();
+                const workout = todayId ? getWorkouts().find(w => w.id === todayId) : null;
+                
+                if (workout) {
+                    const stats = calculateWorkoutStats(workout);
+                    todayWorkoutPage.innerHTML = `
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">${workout.name}</h2>
+                            </div>
+                            <div class="card-content">
+                                <div style="display: flex; justify-content: space-between; opacity: 0.7; margin-bottom: 16px;">
+                                    <span>${stats.blockCount} block${stats.blockCount !== 1 ? 's' : ''}</span>
+                                    <span>~${stats.estimatedDuration} min</span>
+                                </div>
+                                ${(workout.blocks || []).map((block, blockIdx) => `
+                                    <div style="margin-bottom: 12px; padding: 12px; background: var(--color-bg-navy); border-left: 2px solid var(--color-accent-cyan);">
+                                        <div style="font-weight: 500; margin-bottom: 8px;">
+                                            ${block.name || `Block ${blockIdx + 1}`} <span style="opacity: 0.6;">(${block.rounds} round${block.rounds !== 1 ? 's' : ''})</span>
+                                        </div>
+                                        ${(block.items || []).map(item => `
+                                            <div style="opacity: 0.7; font-size: 14px; margin-bottom: 4px; padding-left: 8px;">
+                                                • ${item.exercise}${item.reps ? ` × ${item.reps}` : ''}${item.duration ? ` (${item.duration}s)` : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `).join('')}
+                                <button class="session-btn session-btn-primary" style="margin-top: 16px; width: 100%;" onclick="startWorkoutSession('${workout.id}')">START</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    todayWorkoutPage.innerHTML = '<div class="card"><p style="opacity: 0.6;">No workout selected for today. Go to Workouts page to select one.</p></div>';
+                }
+            }
+        }
+        
+        // Initialize app
+        function initApp() {
+            console.log('initApp called');
+            
+            // Wrap each init step to prevent one failure from breaking everything
+            try {
+                seedData();
+            } catch (e) {
+                console.error('Seed data failed:', e);
+            }
+            
+            try {
+                migrateSeedRecipeMacros();
+            } catch (e) {
+                console.error('Recipe macro migration failed:', e);
+            }
+            
+            try {
+                migrateWorkoutsToBlocks();
+            } catch (e) {
+                console.error('Workout migration failed:', e);
+            }
+            
+            const hash = window.location.hash.slice(1) || 'meal-plan';
+            
+            // Initialize tab bar indicator (critical - must work)
+            try {
+                const tabBar = document.querySelector('.tab-bar');
+                if (tabBar) {
+                    tabBar.setAttribute('data-active', tabIndexMap[hash] || 0);
+                }
+            } catch (e) {
+                console.error('Tab bar init failed:', e);
+            }
+            
+            // Render dynamic content (wrap each to isolate failures)
+            try {
+                renderMealBuilder();
+            } catch (e) {
+                console.error('Meal builder render failed:', e);
+            }
+            
+            try {
+                renderMealPlanContent();
+            } catch (e) {
+                console.error('Meal plan content render failed:', e);
+            }
+            
+            try {
+                renderWorkoutsPage();
+            } catch (e) {
+                console.error('Workouts page render failed:', e);
+            }
+            
+            try {
+                renderWorkoutsContent();
+            } catch (e) {
+                console.error('Workouts content render failed:', e);
+            }
+            
+            // Critical navigation (must work)
+            try {
+                switchTab(hash);
+            } catch (e) {
+                console.error('Switch tab failed:', e);
+            }
+            
+            try {
+                setupCarousels();
+            } catch (e) {
+                console.error('Setup carousels failed:', e);
+            }
+            
+            try {
+                loadCustomIcons();
+            } catch (e) {
+                console.error('Load custom icons failed:', e);
+            }
+            
+            console.log('initApp complete');
+        }
+        
+        // Use DOMContentLoaded for faster initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            // Document already loaded, init immediately
+            initApp();
+        }
+        
+        // Fallback: ensure init runs after a short delay if it hasn't already
+        setTimeout(() => {
+            const titlesRow = document.getElementById('pageTitlesRow');
+            if (!titlesRow || titlesRow.children.length === 0) {
+                console.log('Fallback init triggered');
+                initApp();
+            }
+        }, 100);
+        
+        // Re-cache positions on resize
+        window.addEventListener('resize', () => {
+            if (currentTab && tabConfig[currentTab].pages.length > 0) {
+                requestAnimationFrame(() => {
+                    const pageNav = document.getElementById('pageNav');
+                    const config = tabConfig[currentTab];
+                    
+                    if (pageNav) {
+                        navCenterX = pageNav.offsetWidth / 2;
+                        
+                        config.pages.forEach((pageName, index) => {
+                            const el = pageTitleElements[index];
+                            if (el) {
+                                pageTitlePositions[index] = {
+                                    left: el.offsetLeft,
+                                    width: el.offsetWidth,
+                                    centerX: el.offsetLeft + el.offsetWidth / 2
+                                };
+                            }
+                        });
+                        
+                        // Update position immediately
+                        updateTitlePositionAndOpacity(currentPage, config.pages.length);
+                    }
+                });
+            }
+        });
+        
+        // Service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => {
+                    if (!reg) return; // Handle blocked/failed registration
+                    reg.update();
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) reg.update();
+                    });
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                window.location.reload();
+                            }
+                        });
+                    });
+                })
+                .catch(err => {
+                    // Service worker registration failed (e.g., blocked by browser/test)
+                    console.log('Service worker registration failed:', err);
+                });
+        }
+    </script>
+</body>
+</html>
